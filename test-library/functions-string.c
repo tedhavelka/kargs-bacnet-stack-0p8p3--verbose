@@ -44,6 +44,7 @@
 
 
 #define LOCAL_SIZE__DIAG_MESSAGE (1024)
+#define LOCAL_SIZE__TOKEN (256)
 
 #define LOCAL_SIZE__MEMORY_TO_ALLOCATE_FOR_COMBINED_STRINGS (1024)
 
@@ -117,22 +118,28 @@ int combine_two_strings_v2(const char* caller, const char* string_1, const char*
 // diagnostics:
     char lbuf[LOCAL_SIZE__DIAG_MESSAGE];
 
+    char rname[LOCAL_SIZE__TOKEN];
+    snprintf(rname, LOCAL_SIZE__TOKEN, "%s", "combine_two_strings_v2");
+
 
     printf("starting,\n");
 
     snprintf(lbuf, LOCAL_SIZE__DIAG_MESSAGE, "called by '%s',\n", caller);
-    printf("%s", lbuf);
+    printf("%s:  %s", rname, lbuf);
     snprintf(lbuf, LOCAL_SIZE__DIAG_MESSAGE, "with string 1 holding '%s',\n", string_1);
-    printf("%s", lbuf);
+    printf("%s:  %s", rname, lbuf);
     snprintf(lbuf, LOCAL_SIZE__DIAG_MESSAGE, "and string 2 holding '%s',\n", string_2);
-    printf("%s", lbuf);
+    printf("%s:  %s", rname, lbuf);
 
     number_of_bytes_caller_sends = strlen(pointer_to_caller_memory);
-    snprintf(lbuf, LOCAL_SIZE__DIAG_MESSAGE, "last argument is pointer to block of %d bytes of calling-code-allocated memory,",
+    snprintf(lbuf, LOCAL_SIZE__DIAG_MESSAGE, "last argument is pointer to block of %d bytes of calling-code-allocated memory,\n",
       number_of_bytes_caller_sends);
-    printf("%s", lbuf);
+    printf("%s:  %s", rname, lbuf);
 
-    printf("done for now, returning . . .");
+    printf("%s:  %s", rname, "combining these strings in caller's memory . . .");
+    snprintf(pointer_to_caller_memory, number_of_bytes_caller_sends, "%s%s", string_1, string_2);
+
+    printf("%s:  done for now, returning . . .\n", rname);
 }
 
 
