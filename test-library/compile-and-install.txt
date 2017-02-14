@@ -1,0 +1,12 @@
+
+
+
+$ gcc -o testlib.o -c functions-string.c
+
+$ gcc -shared -o libtestlib0.so testlib.o -lm
+
+$ sudo cp -p functions-string.h /usr/local/include/testlib0
+
+$ sudo cp -p libtestlib0.so /usr/local/lib
+
+
