@@ -6,7 +6,21 @@
 //
 //  COMPILE STEPS:
 //
-//    $ gcc main.c -I/usr/local/include/testlib0 -ltestlib0
+//    $ gcc main.c -I/usr/local/include/libtestlib-0p1 -L/usr/local/lib/libtestlib-0p1 -ltestlib-0p1
+//
+//
+//
+//  EXECUTE a.out STEPS:
+//
+//    $ export LD_LIBRARY_PATH=/usr/local/lib/libtestlib-0p1:$LD_LIBRARY_PATH
+//
+//    $ ./a.out
+//
+//
+//
+//  REFERENCES:
+//
+//    *  https://www.cs.swarthmore.edu/~newhall/unixhelp/howto_C_libraries.html
 //
 //
 //
