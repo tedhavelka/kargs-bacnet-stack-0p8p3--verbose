@@ -14,11 +14,18 @@
 
 
 #include <stdlib.h>
+
 #include <stdio.h>
+
 #include <string.h>    // provides strncpy(),
+
+
+
+// Test libraries, locally authored:
 
 #include <functions-string.h>
 
+#include <diagnostics.h>
 
 
 
@@ -90,17 +97,23 @@ int main(int argc, char** argv)
 
     char lbuf[SIZE__BUFFER];
 
-    char rname[SIZE__TOKEN];
-    strncpy(rname, "main", SIZE__TOKEN);
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("main");
 
 
-    printf("main():  starting,\n");
 
-    printf("main():  calling test library routine to combine two strings . . .\n");
+    show_diag(rname, "starting,", dflag_announce);
+
+    show_diag(rname, "- TEST 1 -", dflag_verbose);
+
+//    printf("main():  calling test library routine to combine two strings . . .\n");
+    show_diag(rname, "calling test library routine to combine two strings . . .", dflag_verbose);
     string_ptr = combine_two_strings("main", "FIRST_STRING_IS_UPPER_CASE  ", "second_string_is_lower_case_1234");
 
-    snprintf(lbuf, SIZE__BUFFER, "main():  back from test library, string pointer holds '%s',\n", string_ptr);
-    printf("%s", lbuf);
+    snprintf(lbuf, SIZE__BUFFER, "back from test library, string pointer holds '%s',", string_ptr);
+    show_diag(rname, lbuf, dflag_verbose);
 
 
 

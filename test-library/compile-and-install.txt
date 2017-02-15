@@ -1,12 +1,20 @@
 
 
 
-$ gcc -o testlib.o -c functions-string.c
+$ gcc -o libtestlib0.o -c functions-string.c
 
-$ gcc -shared -o libtestlib0.so testlib.o -lm
+$ gcc -shared -o libtestlib0.so libtestlib0.o -lm
 
 $ sudo cp -p functions-string.h /usr/local/include/testlib0
 
 $ sudo cp -p libtestlib0.so /usr/local/lib
+
+
+
+# 2017-02-14 TUE
+
+$ gcc -o functions-string.o -c functions-string.c
+$ gcc -o diagnostics.o -c diagnostics.c
+$ gcc -shared -o libtestlib0.so functions-string.o diagnostics.o
 
 
