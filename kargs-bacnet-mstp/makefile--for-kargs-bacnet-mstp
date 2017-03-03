@@ -1,0 +1,198 @@
+##======================================================================
+##
+##  FILE:  Makefile to compile subset of Steve Kargs' open source
+##     BACnet stack source files, into object files, and then into
+##     a shared object file to install as a library . . .
+##
+##
+##
+##  REFERENCES:
+##
+##   From Robert Mecklenburg's GNU Make book page 33:
+##
+##      include $(subst .c,.d,$(SOURCES))
+##
+##      %.d: %.c
+##      	$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
+##      	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+##      	rm -f $@.$$$$
+##
+##
+##
+##
+##
+##
+##======================================================================
+
+
+
+export PROJECT_NAME=kargs-bacnet-mstp-routines
+
+export LIBRARY_BASENAME=libkargs-bacnet-mstp
+
+export LIBRARY_NAME=$(LIBRARY_BASENAME)-$(MAJOR)p$(MINOR_1)p$(MINOR_2)
+
+
+
+export KARGS_BACNET_RELEASE__MAJOR=0
+export KARGS_BACNET_RELEASE__MINOR_1=8
+export KARGS_BACNET_RELEASE__MINOR_2=3
+
+export MAJOR=$(KARGS_BACNET_RELEASE__MAJOR)
+
+export MINOR_1=$(KARGS_BACNET_RELEASE__MINOR_1)
+
+export MINOR_2=$(KARGS_BACNET_RELEASE__MINOR_2)
+
+
+
+
+
+
+LOCAL_KARGS_RELEASE_DIR=/home/ted/projects/bacnet/steve-karg-stack/tags/bacnet-stack-0.8.3
+
+CFLAGS=-I$(LOCAL_KARGS_RELEASE_DIR)/include -I/$(LOCAL_KARGS_RELEASE_DIR)/test
+
+SRC_DIR=$(LOCAL_KARGS_RELEASE_DIR)/src
+
+# VPATH=$(SRC_DIR)
+vpath %.c $(LOCAL_KARGS_RELEASE_DIR)/src $(LOCAL_KARGS_RELEASE_DIR)/ports/linux $(LOCAL_KARGS_RELEASE_DIR)/test
+vpath %.h $(LOCAL_KARGS_RELEASE_DIR)/include $(LOCAL_KARGS_RELEASE_DIR)/ports/linux $(LOCAL_KARGS_RELEASE_DIR)/test
+
+
+
+## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## 2017-02-28 - what does rs485.c provide?  This source file pound
+##  includes a double-quoted header file, which is causing problems with
+##  our shared object library build . . .    - TMH
+##
+##  Ok this shared object mini-project builds with or without the Kargs
+##  source file named rs485.c, but our test program named bacnet-stub.c
+##  does not compile and the gcc errors are that the shared object
+##  has undefined references to three Kargs BACnet stack routines . . .
+##
+## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+# OBJECT_FILES_TO_CREATE=crc.o mstp.o mstptext.o timer.o indtext.o rs485.o
+# OBJECT_FILES_TO_CREATE=crc.o mstp.o mstptext.o timer.o indtext.o
+# OBJECT_FILES_TO_CREATE=ctest.o crc.o mstp.o mstptext.o timer.o indtext.o
+# OBJECT_FILES_TO_CREATE=crc.o mstp.o mstptext.o timer.o indtext.o ringbuf.o
+OBJECT_FILES_TO_CREATE=ctest.o ringbuf.o crc.o mstp.o mstptext.o timer.o indtext.o
+
+SOURCES=$(subst .o,.c,$(OBJECT_FILES_TO_CREATE)) 
+
+SHARED_OBJECT_FILE=$(LIBRARY_NAME).so
+
+HEADERS=externally-defined-kargs-functions.h
+
+
+
+TARGETS=$(SHARED_OBJECT_FILE)
+
+
+
+
+all: $(TARGETS)
+
+
+
+
+# Update the targets whenever any of the object files which comprise
+# the shared object library file are newer than the shared object file.
+# This is the rule which invokes gcc to create a .so shared object
+# file:
+
+# $(TARGETS): $(OBJECT_FILES_TO_CREATE) $(HEADERS)
+$(TARGETS): $(OBJECT_FILES_TO_CREATE)
+	$(CC) -shared -o $@ $(OBJECT_FILES_TO_CREATE)
+
+
+
+## target: dependency
+
+# $(OBJECT_FILES_TO_CREATE): $(SOURCES)   # <-- $(SOURCES) is a list, and in our recipe which follows we only
+                                          #    refer to the first item in the list for every given object file,
+                                          #    we're building.  This is an error!   - TMH
+%.o: %.c
+# 2017-03-02 - Ted adding preprocessor macro statement '-DTEST', to enamble compiling lines 1235 to 1712 in mstp.c:
+#	$(CC) -o $@ -c -fPIC $<
+#	echo "* * *  variable vpath holds '" $(vpath) "',  * * *"     # <-- $(vpath) evaluates to the empty string in this statement - TMH
+#	$(CC) -DTEST -o $@ -c -fPIC $<
+	$(CC) $(CFLAGS) -DTEST -c -fPIC $< -o $@
+
+
+
+
+
+## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+##  - 2017-02-28 TUE -
+##  So far a while the only way to point make to source files in a
+##  directory other than . was to spell out the following, file-specific
+##  rules for building each source into an object file which make's
+##  call to gcc would place here along side thise makefile.  Then
+##  unexpectly yesterday, Monday Feb 27, adding .o filenames to the
+##  list of object files to create *just worked*.  Ted asks, what allowed
+##  this to work for the new files?  These *.o filenames are converted
+##  here in this makefile to their corresponding .c source filenames.
+##
+##  Also Ted notes that 
+##
+##
+
+#.PHONY: crc.o
+#crc.o: $(SRC_DIR)/crc.c
+#	$(CC) -o $@ -c -fPIC $<
+#
+#.PHONY: mstp.o
+#mstp.o: $(SRC_DIR)/mstp.c
+#	$(CC) -o $@ -c -fPIC $<
+#
+#.PHONY: mstptext.o
+#mstptext.o: $(SRC_DIR)/mstptext.c
+#	$(CC) -o $@ -c -fPIC $<
+
+
+
+
+
+
+
+#
+## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## 2017-02-16 THU - A test, using makefile code from Robert Mecklenburg's GNU
+##  make book page 77:
+## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+#
+
+letters := $(foreach letter,a b c d,$(letter))
+show-words:
+	# letters has $(words $(letters)) words: '$(letters)'
+
+
+
+
+
+include $(subst .c,.d,$(SOURCES))
+
+%.d: %.c
+	$(CC) -M $(CPPFLAGS) $< > $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+
+
+
+
+install:
+#	@echo "install target not yet implemented for project '$(LIBRARY_NAME)',"
+	@echo "installing '$(LIBRARY_NAME)' in local test library location . . ."
+	sudo cp -p $(TARGETS) /usr/local/lib/libtestlib-0p1
+
+
+
+clean:
+	rm -f ./*.d ./*.o ./*.so
+
+
+
+# --- EOF ---
