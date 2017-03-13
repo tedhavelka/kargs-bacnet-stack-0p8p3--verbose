@@ -49,9 +49,11 @@ export MINOR_2=$(KARGS_BACNET_RELEASE__MINOR_2)
 
 
 
-LOCAL_KARGS_RELEASE_DIR=/home/ted/projects/bacnet/steve-karg-stack/tags/bacnet-stack-0.8.3
+# LOCAL_KARGS_RELEASE_DIR=/home/ted/projects/bacnet/steve-karg-stack/tags/bacnet-stack-0.8.3
+LOCAL_KARGS_RELEASE_DIR=/home/ted/projects/bacnet/steve-karg-stack/tags/bacnet-stack-0.8.3--verbose
 
-CFLAGS=-I$(LOCAL_KARGS_RELEASE_DIR)/include -I/$(LOCAL_KARGS_RELEASE_DIR)/test
+
+CFLAGS=-I$(LOCAL_KARGS_RELEASE_DIR)/include -I$(LOCAL_KARGS_RELEASE_DIR)/test -I../include
 
 SRC_DIR=$(LOCAL_KARGS_RELEASE_DIR)/src
 
@@ -73,17 +75,40 @@ vpath %.h $(LOCAL_KARGS_RELEASE_DIR)/include $(LOCAL_KARGS_RELEASE_DIR)/ports/li
 ##
 ## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-# OBJECT_FILES_TO_CREATE=crc.o mstp.o mstptext.o timer.o indtext.o rs485.o
-# OBJECT_FILES_TO_CREATE=crc.o mstp.o mstptext.o timer.o indtext.o
-# OBJECT_FILES_TO_CREATE=ctest.o crc.o mstp.o mstptext.o timer.o indtext.o
-# OBJECT_FILES_TO_CREATE=crc.o mstp.o mstptext.o timer.o indtext.o ringbuf.o
-OBJECT_FILES_TO_CREATE=ctest.o ringbuf.o crc.o mstp.o mstptext.o timer.o indtext.o
+# OBJECT_FILES_TO_CREATE=ctest.o ringbuf.o crc.o mstp.o mstptext.o timer.o indtext.o
+
+
+## - 2017-03-07 TUE - To document where sources come from in 0.8.3 Kargs' stack release:
+
+# OBJECT_FILES_FROM_SRC=crc.o indtext.o mstp.o mstptext.o ringbuf.o
+OBJECT_FILES_FROM_SRC=bacaddr.o bacint.o crc.o debug.o fifo.o indtext.o mstp.o mstptext.o npdu.o ringbuf.o
+OBJECT_FILES_FROM_PORTS_LINUX=dlmstp.o rs485.o timer.o
+OBJECT_FILES_FROM_TEST=ctest.o
+# OBJECT_FILES_FROM_MAKEFILE_DIR=extras.o
+
+OBJECT_FILES_TO_CREATE=$(OBJECT_FILES_FROM_SRC) $(OBJECT_FILES_FROM_PORTS_LINUX) $(OBJECT_FILES_FROM_TEST) $(OBJECT_FILES_FROM_MAKEFILE_DIR)
+
 
 SOURCES=$(subst .o,.c,$(OBJECT_FILES_TO_CREATE)) 
 
 SHARED_OBJECT_FILE=$(LIBRARY_NAME).so
 
-HEADERS=externally-defined-kargs-functions.h
+# HEADERS=externally-defined-kargs-functions.h
+# HEADERS=standard-c-headers.h
+
+
+## Notes on -D flags . . .
+##
+##  -DTEST . . . to enable several routines near end of source mstp.c,
+##
+##  -DPRINT_ENABLED . . . ( Ted needs to track this one down, was added by Ted 2017-03-07 )
+##
+##  -DDEBUG_ENABLED . . . for more verbose debug_printf() in ~[Kargs_release]/src/debug.c
+##
+## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+#DASH_D_FLAGS=-DTEST -DPRINT_ENABLED -DDEBUG_ENABLED
+DASH_D_FLAGS=-DPRINT_ENABLED -DDEBUG_ENABLED
 
 
 
@@ -102,23 +127,39 @@ all: $(TARGETS)
 # This is the rule which invokes gcc to create a .so shared object
 # file:
 
-# $(TARGETS): $(OBJECT_FILES_TO_CREATE) $(HEADERS)
 $(TARGETS): $(OBJECT_FILES_TO_CREATE)
 	$(CC) -shared -o $@ $(OBJECT_FILES_TO_CREATE)
 
 
 
-## target: dependency
+.PHONY: show-sources
+show-sources:
+	@printf "#\n# sources for shared object based on Kargs' stack are:\n#  $(SOURCES)\n#\n"
 
-# $(OBJECT_FILES_TO_CREATE): $(SOURCES)   # <-- $(SOURCES) is a list, and in our recipe which follows we only
-                                          #    refer to the first item in the list for every given object file,
-                                          #    we're building.  This is an error!   - TMH
-%.o: %.c
+.PHONY: show-summary
+show-summary:
+	@printf "#\n# For shared object library, list of files needed:\n"
+	@printf "# Sources:  $(SOURCES)\n"
+	@printf "# Headers:  $(HEADERS)\n"
+	@printf "# Object files:  $(OBJECT_FILES_TO_CREATE)\n"
+	@printf "# Dependency files:  $(dependency_files)\n"
+	@printf "#\n"
+
+
+
+
+#%.o: %.c
 # 2017-03-02 - Ted adding preprocessor macro statement '-DTEST', to enamble compiling lines 1235 to 1712 in mstp.c:
 #	$(CC) -o $@ -c -fPIC $<
 #	echo "* * *  variable vpath holds '" $(vpath) "',  * * *"     # <-- $(vpath) evaluates to the empty string in this statement - TMH
 #	$(CC) -DTEST -o $@ -c -fPIC $<
-	$(CC) $(CFLAGS) -DTEST -c -fPIC $< -o $@
+#	$(CC) $(CFLAGS) -DTEST -c -fPIC $< -o $@
+
+#	$(CC) $(CFLAGS) -DTEST -DPRINT_ENABLED -c -fPIC $< -o $@
+
+%.o: %.c
+# 	$(CC) $(CFLAGS) $(DASH_D_FLAGS) -c -fPIC -lpthread $< -o $@
+	$(CC) $(CFLAGS) $(DASH_D_FLAGS) -c -fPIC $< -o $@
 
 
 
@@ -171,6 +212,7 @@ show-words:
 
 
 
+dependency_files := $(subst .c,.d,$(SOURCES))
 
 include $(subst .c,.d,$(SOURCES))
 

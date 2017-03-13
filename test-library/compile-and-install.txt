@@ -13,8 +13,26 @@ $ sudo cp -p libtestlib0.so /usr/local/lib
 
 # 2017-02-14 TUE
 
+Object files must be compiled one at a time, as the -o option doesn't and would not know how to map .c source files to their corresponding .o object files . . .
+
 $ gcc -o functions-string.o -c functions-string.c
 $ gcc -o diagnostics.o -c diagnostics.c
 $ gcc -shared -o libtestlib0.so functions-string.o diagnostics.o
 
 
+
+
+
+# 2017-02-16 THU
+
+This call to gcc within Steve Kargs' BACnet stack release 0.8.3 compiiles mstp.c to an object file:
+
+$ gcc -Wall -I../include -I../ports/linux -o mstp.o -c mstp.c
+
+
+
+
+
+
+
+# --- EOF ---
