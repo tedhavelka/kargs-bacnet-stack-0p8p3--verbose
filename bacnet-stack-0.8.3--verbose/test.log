@@ -1,0 +1,3 @@
+Test "BACnet Abort":
+	Passed: 650258
+	Failed: 0
