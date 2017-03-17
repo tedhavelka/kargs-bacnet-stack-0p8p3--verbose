@@ -1182,16 +1182,20 @@ void MSTP_Slave_Node_FSM(
     }
 }
 
+
+
+
 /* note: This_Station assumed to be set with the MAC address */
 /* note: Nmax_info_frames assumed to be set (default=1) */
 /* note: Nmax_master assumed to be set (default=127) */
 /* note: InputBuffer and InputBufferSize assumed to be set */
 /* note: OutputBuffer and OutputBufferSize assumed to be set */
 /* note: SilenceTimer and SilenceTimerReset assumed to be set */
-void MSTP_Init(
-    volatile struct mstp_port_struct_t *mstp_port)
+
+void MSTP_Init(volatile struct mstp_port_struct_t *mstp_port)
 {
-    if (mstp_port) {
+    if (mstp_port)
+    {
 #if 0
         /* FIXME: you must point these buffers to actual byte buckets
            in the dlmstp function before calling this init. */
@@ -1231,6 +1235,9 @@ void MSTP_Init(
         mstp_port->TokenCount = 0;
     }
 }
+
+
+
 
 #ifdef TEST
 #include <assert.h>

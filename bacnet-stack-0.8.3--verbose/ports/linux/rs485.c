@@ -145,13 +145,18 @@ const char *RS485_Interface(
 
 uint32_t RS485_Get_Baud_Rate(void)
 {
+
     uint32_t baud = 0;
 
+    unsigned int local_diagnostics_on = 0;
 
-    printf("RS485_Get_Baud_Rate():  starting,\n");
-    printf("RS485_Get_Baud_Rate():  this routine defined in ~0-8-3/ports/linux/rs485.c,\n");
-    printf("RS485_Get_Baud_Rate():  called to return baud rate,\n");
-    printf("RS485_Get_Baud_Rate():  RS485_Baud holds %d . . .\n", RS485_Baud);
+    if ( local_diagnostics_on )
+    {
+        printf("RS485_Get_Baud_Rate():  starting,\n");
+        printf("RS485_Get_Baud_Rate():  this routine defined in ~0-8-3/ports/linux/rs485.c,\n");
+        printf("RS485_Get_Baud_Rate():  called to return baud rate,\n");
+        printf("RS485_Get_Baud_Rate():  RS485_Baud holds %d . . .\n", RS485_Baud);
+    }
 
     if ( 0 )
 //    if ( RS485_Baud != B9600 )
@@ -231,7 +236,12 @@ uint32_t RS485_Get_Baud_Rate(void)
             baud = 9600;
     }
 
-    printf("RS485_Get_Baud_Rate():  returning baud equal to %d . . .\n", baud);
+
+    if ( local_diagnostics_on )
+    {
+        printf("RS485_Get_Baud_Rate():  returning baud equal to %d . . .\n", baud);
+    }
+
 
     return baud;
 

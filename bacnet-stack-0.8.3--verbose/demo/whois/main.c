@@ -52,6 +52,16 @@
 #include "dlenv.h"
 #include "net.h"
 
+// 2017-03-15 - Added by Ted:
+
+#include <diagnostics.h>
+
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//  SECTION -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 /* buffer used for receive */
 static uint8_t Rx_Buf[MAX_MPDU] = { 0 };
 
@@ -365,13 +375,14 @@ static int parse_bac_address(
     return dest->len;
 }
 
-int main(
-    int argc,
-    char *argv[])
+
+
+
+
+int main(int argc, char *argv[])
 {
-    BACNET_ADDRESS src = {
-        0
-    };  /* address where message came from */
+    BACNET_ADDRESS src = { 0 };  /* address where message came from */
+
     uint16_t pdu_len = 0;
     unsigned timeout = 100;     /* milliseconds */
     time_t total_seconds = 0;
@@ -382,82 +393,188 @@ int main(
     BACNET_ADDRESS dest;
     int argi;
 
+// diagnostics added by Ted:
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_parse_cl_parameters = DIAGNOSTICS_ON;
+    unsigned int dflag_initializing_steps = DIAGNOSTICS_ON;
+    unsigned int dflag_main_loop = DIAGNOSTICS_ON;
+
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+    DIAG__SET_ROUTINE_NAME("main");
+
+
+
+//    printf("bacwi main():  starting,\n");
+    show_diag(rname, "starting,", dflag_announce);
+
+    show_diag(rname, "checking whether bacwi --help option requested . . .\n", dflag_verbose);
+
     /* print help if requested */
-    for (argi = 1; argi < argc; argi++) {
-        if (strcmp(argv[argi], "--help") == 0) {
+    for (argi = 1; argi < argc; argi++)
+    {
+        if (strcmp(argv[argi], "--help") == 0)
+        {
             print_help(filename_remove_path(argv[0]));
             return 0;
         }
     }
 
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// NOTE 2017-03-14:  this routine defined in ../../src/tsm.c, two
+//  +  directories up from ~/demo/whois.
+//  +  Strange, that routine returns its sole parameter cast as type
+//  +  void.  What does that achieve?  - TMH
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+//    printf("bacwi main():  calling ../../src/tsm.c routine datalink_get_broadcast_address() . . .\n");
+    show_diag(rname, "calling ~kargs-bacnet-stack-0.8.3/src/tsm.c routine datalink_get_broadcast_address() . . .\n",
+      dflag_verbose);
     datalink_get_broadcast_address(&dest);
 
     /* decode the command line parameters */
-    if (argc >= 2) {
+    if (argc >= 2)
+    {
         char *s;
         long v = strtol(argv[1], &s, 0);
-        if (*s++ == ':') {
+        if (*s++ == ':')
+        {
             if (argv[1][0] != ':')
+            {
                 dest.net = (uint16_t) v;
+            }
+
             dest.mac_len = 0;
+
             if (isdigit(*s))
+            {
                 parse_bac_address(&dest, s);
-        } else {
+            }
+
+        }
+            else
+        {
             Target_Object_Instance_Min = Target_Object_Instance_Max = v;
         }
     }
+// 2017-03-15 - added by Ted:
+    else
+    {
+        show_diag(rname, "argument count to bacwi less than two (2),\n", dflag_parse_cl_parameters);
+    }
 
-    if (argc <= 2) {
+    if (argc <= 2)
+    {
         /* empty */
-    } else if (argc == 3) {
+    }
+    else if (argc == 3)
+    {
         if (Target_Object_Instance_Min == -1)
-            Target_Object_Instance_Min = Target_Object_Instance_Max =
-                strtol(argv[2], NULL, 0);
+        {
+            Target_Object_Instance_Min = Target_Object_Instance_Max = strtol(argv[2], NULL, 0);
+        }
         else
+        {
             Target_Object_Instance_Max = strtol(argv[2], NULL, 0);
-    } else if (argc == 4) {
+        }
+    }
+    else if (argc == 4)
+    {
         Target_Object_Instance_Min = strtol(argv[2], NULL, 0);
         Target_Object_Instance_Max = strtol(argv[3], NULL, 0);
-    } else {
+    }
+    else
+    {
         print_usage(filename_remove_path(argv[0]));
         return 1;
     }
 
-    if (Target_Object_Instance_Min > BACNET_MAX_INSTANCE) {
+
+// Steve Kargs performing parameter bounds checking here:
+
+    if (Target_Object_Instance_Min > BACNET_MAX_INSTANCE)
+    {
         fprintf(stderr, "device-instance-min=%u - it must be less than %u\r\n",
             Target_Object_Instance_Min, BACNET_MAX_INSTANCE + 1);
         return 1;
     }
-    if (Target_Object_Instance_Max > BACNET_MAX_INSTANCE) {
+
+    if (Target_Object_Instance_Max > BACNET_MAX_INSTANCE)
+    {
         fprintf(stderr, "device-instance-max=%u - it must be less than %u\r\n",
             Target_Object_Instance_Max, BACNET_MAX_INSTANCE + 1);
         return 1;
     }
 
+
+
+    show_diag(rname, "entering \"setup my info\" part of initialilzing tasks:", dflag_initializing_steps);
+
     /* setup my info */
+    show_diag(rname, "calling Device_Set_Object_Instance_Number(BACNET_MAX_INSTANCE) . . .", dflag_initializing_steps);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "BACNET_MAX_INSTANCE set to %X,", BACNET_MAX_INSTANCE);
+    show_diag(rname, lbuf, dflag_initializing_steps);
     Device_Set_Object_Instance_Number(BACNET_MAX_INSTANCE);
+
+    show_diag(rname, "calling local routine named init_service_handlers() . . .", dflag_initializing_steps);
     init_service_handlers();
+
+    show_diag(rname, "calling address_init() . . .", dflag_initializing_steps);
     address_init();
+
+    show_diag(rname, "calling dlenv_init() . . .", dflag_initializing_steps);
     dlenv_init();
+
+    show_diag(rname, "calling atexit() with parameter 'datalink_cleanup' . . .", dflag_initializing_steps);
     atexit(datalink_cleanup);
+
+
+
+    show_diag(rname, "entering \"configure timeout values\" part of initialilzing tasks:", dflag_initializing_steps);
+
     /* configure the timeout values */
     last_seconds = time(NULL);
     timeout_seconds = apdu_timeout() / 1000;
+
+
     /* send the request */
-    Send_WhoIs_To_Network(&dest, Target_Object_Instance_Min,
-        Target_Object_Instance_Max);
-    /* loop forever */
-    for (;;) {
+    show_diag(rname, "calling routine Send_WhoIs_To_Network() . . .", dflag_initializing_steps);
+    Send_WhoIs_To_Network(&dest, Target_Object_Instance_Min, Target_Object_Instance_Max);
+
+
+
+/*--------------------------------------------------------------------*/
+/* loop forever */
+/*--------------------------------------------------------------------*/
+
+    show_diag(rname, "entering FOR-loop to search for \"WhoIs\" responding BACnet devices until time out:",
+      dflag_verbose);
+
+    for (;;)
+    {
         /* increment timer - exit if timed out */
         current_seconds = time(NULL);
+
         /* returns 0 bytes on timeout */
+       
         pdu_len = datalink_receive(&src, &Rx_Buf[0], MAX_MPDU, timeout);
         /* process */
-        if (pdu_len) {
+        if (pdu_len)
+        {
+// 2017-03-16 - added by Ted:
+            show_diag(rname, "routine datalink_receive() returned non-zero value, calling npdu_handler() to process this data . . .",
+              dflag_main_loop);
             npdu_handler(&src, &Rx_Buf[0], pdu_len);
         }
+
         if (Error_Detected)
+        {
             break;
+        }
+
+
         /* increment timer - exit if timed out */
         elapsed_seconds = current_seconds - last_seconds;
         if (elapsed_seconds) {
@@ -465,13 +582,37 @@ int main(
             bvlc_maintenance_timer(elapsed_seconds);
 #endif
         }
+
         total_seconds += elapsed_seconds;
         if (total_seconds > timeout_seconds)
+        {
             break;
+        }
+
+
+
+// 2017-03-16 - added by Ted:
+        if ( last_seconds != current_seconds )
+        {
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "bacwi main loop running now for %lu seconds,", current_seconds);
+            show_diag(rname, lbuf, dflag_main_loop);
+        }
+
+
+
         /* keep track of time for next check */
         last_seconds = current_seconds;
+
     }
+
     print_address_cache();
+
+    printf("bacwi main():  done.\n");
 
     return 0;
 }
+
+
+
+
+// --- EOF ---

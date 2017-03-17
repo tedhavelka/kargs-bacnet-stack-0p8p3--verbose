@@ -9,6 +9,8 @@
 #
 # Assumes rm and cp are available
 
+
+
 # configuration
 # If BACNET_DEFINES has not already been set, configure to your needs here
 MY_BACNET_DEFINES = -DPRINT_ENABLED=1
@@ -16,7 +18,13 @@ MY_BACNET_DEFINES += -DBACAPP_ALL
 MY_BACNET_DEFINES += -DBACFILE
 MY_BACNET_DEFINES += -DINTRINSIC_REPORTING
 MY_BACNET_DEFINES += -DBACNET_PROPERTY_LISTS=1
+
+# 2017-03-15 - Added by Ted for diagnostics routines by Ted, Ted seeing whether able to pass -I option to compiler via BACNET_DEFINES:
+MY_BACNET_DEFINES += -I/usr/local/include/libtestlib-0p1
+
 BACNET_DEFINES ?= $(MY_BACNET_DEFINES)
+
+
 
 #BACDL_DEFINE=-DBACDL_ETHERNET=1
 #BACDL_DEFINE=-DBACDL_ARCNET=1
@@ -42,18 +50,30 @@ BACNET_PORT ?= linux
 OPTIMIZATION = -Os
 DEBUGGING =
 WARNINGS = -Wall -Wmissing-prototypes
+
 ifeq (${BUILD},debug)
 OPTIMIZATION = -O0
 DEBUGGING = -g -DDEBUG_ENABLED=1
+
 ifeq (${BACDL_DEFINE},-DBACDL_BIP=1)
 DEFINES += -DBIP_DEBUG
 endif
+
 endif
-CFLAGS  = $(WARNINGS) $(DEBUGGING) $(OPTIMIZATION) $(STANDARDS) $(INCLUDES) $(DEFINES)
+
+
+# CFLAGS  = $(WARNINGS) $(DEBUGGING) $(OPTIMIZATION) $(STANDARDS) $(INCLUDES) $(DEFINES)
+CFLAGS  = $(WARNINGS) $(DEBUGGING) $(OPTIMIZATION) $(STANDARDS) $(INCLUDES) $(DEFINES) $(CFLAGS_ADDED_BY_TED)
 
 # Export the variables defined here to all subprocesses
 # (see http://www.gnu.org/software/automake/manual/make/Special-Targets.html)
 .EXPORT_ALL_VARIABLES:
+
+# 2017-03-16 - As of 2017-03-17 these variable exports appear to be working:  - TMH
+CFLAGS_ADDED_BY_TED=-I/usr/local/include/libtestlib-0p1
+LFLAGS_ADDED_BY_TED=-L/usr/local/lib/libtestlib-0p1 -ltestlib-0p1
+
+
 
 all: library demos
 .PHONY : all library demos clean

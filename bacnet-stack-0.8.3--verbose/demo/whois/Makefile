@@ -15,10 +15,20 @@ OBJS = ${SRCS:.c=.o}
 
 all: ${BACNET_LIB_TARGET} Makefile ${TARGET_BIN}
 
+
+
+# 2017-03-15 - Ted adding printf statements to following makefile recipe:
+
 ${TARGET_BIN}: ${OBJS} Makefile ${BACNET_LIB_TARGET}
-	${CC} ${PFLAGS} ${OBJS} ${LFLAGS} -o $@
+	@printf "2017-03-15 - messages from bacwi makefile:\n"
+	@printf "2017-03-15 - likely called by make invocation two parent directories above,\n"
+	@printf "2017-03-15 - LFLAGS_ADDED_BY_TED holds '$(LFLAGS_ADDED_BY_TED)'.\n"
+#	${CC} ${PFLAGS} ${OBJS} ${LFLAGS} -o $@
+	${CC} ${PFLAGS} ${OBJS} ${LFLAGS} $(LFLAGS_ADDED_BY_TED) -o $@
 	size $@
 	cp $@ ../../bin
+
+
 
 lib: ${BACNET_LIB_TARGET}
 

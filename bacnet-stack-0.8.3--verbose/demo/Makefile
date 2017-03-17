@@ -13,14 +13,17 @@ BACNET_PORT_DIR = ../../ports/${BACNET_PORT}
 BACNET_INCLUDE = ../../include
 BACNET_OBJECT = ../../demo/object
 BACNET_HANDLER = ../../demo/handler
+
 # BACnet Library
 BACNET_LIB_DIR = ../../lib
 BACNET_LIB_NAME = bacnet
 BACNET_LIB_TARGET = $(BACNET_LIB_DIR)/lib$(BACNET_LIB_NAME).a
+
 # Compiler Setup
 INCLUDE1 = -I$(BACNET_PORT_DIR) -I$(BACNET_OBJECT) -I$(BACNET_HANDLER)
 INCLUDE2 = -I$(BACNET_INCLUDE)
 INCLUDES = $(INCLUDE1) $(INCLUDE2)
+
 BACNET_LIB=-L$(BACNET_LIB_DIR),-l$(BACNET_LIB_NAME)
 ifeq (${BACNET_PORT},linux)
 PFLAGS = -pthread
@@ -44,9 +47,29 @@ ifeq (${BUILD},debug)
 OPTIMIZATION = -O0
 DEBUGGING = -g
 endif
+
+
+
 # put all the flags together
+
+## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+## 2017-03-17 - Ted amending flags for local diagnostics shared object type library:
+##
+##   CFLAGS := -Wall $(DEBUGGING) $(OPTIMIZATION) $(INCLUDES) $(DEFINES)
+##   LFLAGS := -Wl,$(BACNET_LIB),$(SYSTEM_LIB)
+##
+## These variables exported by Kargs stack makefile in parent
+## directory, noted here for reference:
+##
+##   CFLAGS_ADDED_BY_TED=-I/usr/local/include/libtestlib-0p1
+##   LFLAGS_ADDED_BY_TED=-L/usr/local/lib/libtestlib-0p1 -ltestlib-0p1
+##
+## - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 CFLAGS := -Wall $(DEBUGGING) $(OPTIMIZATION) $(INCLUDES) $(DEFINES)
-LFLAGS := -Wl,$(BACNET_LIB),$(SYSTEM_LIB)
+LFLAGS := -Wl,$(BACNET_LIB),$(SYSTEM_LIB),$(LFLAGS_ADDED_BY_TED)
+
+
 
 .EXPORT_ALL_VARIABLES:
 
@@ -57,6 +80,7 @@ SUBDIRS = readprop writeprop readfile writefile reinit server dcc \
 ifeq (${BACDL_DEFINE},-DBACDL_BIP=1)
 	SUBDIRS += whoisrouter iamrouter initrouter readbdt
 endif
+
 ifeq (${BACNET_PORT},linux)
 SUBDIRS += mstpcap mstpcrc
 #SUBDIRS += router
@@ -65,6 +89,8 @@ endif
 ifeq (${BACNET_PORT},win32)
 SUBDIRS += ptransfer mstpcap mstpcrc
 endif
+
+
 
 .PHONY : all gateway router clean
 

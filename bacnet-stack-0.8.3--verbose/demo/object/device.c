@@ -678,20 +678,45 @@ uint32_t Device_Object_Instance_Number(
 #endif
 }
 
-bool Device_Set_Object_Instance_Number(
-    uint32_t object_id)
+
+
+
+
+// 2017-03-16 THU - Ted adding printf() to confirm or disconfirm use of this routine be demo program 'bacwi':
+
+bool Device_Set_Object_Instance_Number(uint32_t object_id)
 {
     bool status = true; /* return value */
 
-    if (object_id <= BACNET_MAX_INSTANCE) {
+printf("#\n");
+printf("# - 2017-03-16 THU -\n");
+printf("# ../bacnet-stack-0.8.3/demo/object/device.c routine Device_Set_Object_Instance_Number() starting,\n");
+printf("#\n");
+
+FILE* fp_object_diagnotiscs = fopen("/home/ted/z--kargs-bacnet-diagnostics.txt", "a+");
+if ( fp_object_diagnotiscs != NULL )
+{
+    fprintf(fp_object_diagnotiscs, "%s", "# ../bacnet-stack-0.8.3/demo/piface/device.c routine Device_Set_Object_Instance_Number() starting,\n");
+    fclose(fp_object_diagnotiscs);
+}
+
+    if (object_id <= BACNET_MAX_INSTANCE)
+    {
         /* Make the change and update the database revision */
         Object_Instance_Number = object_id;
         Device_Inc_Database_Revision();
-    } else
+    }
+    else
+    {
         status = false;
+    }
 
     return status;
 }
+
+
+
+
 
 bool Device_Valid_Object_Instance_Number(
     uint32_t object_id)

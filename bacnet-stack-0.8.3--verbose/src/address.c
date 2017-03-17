@@ -198,8 +198,7 @@ note: useful for MS/TP Slave static binding
 */
 static const char *Address_Cache_Filename = "address_cache";
 
-static void address_file_init(
-    const char *pFilename)
+static void address_file_init(const char *pFilename)
 {
     FILE *pFile = NULL; /* stream pointer */
     char line[256] = { "" };    /* holds line from file */
@@ -214,46 +213,70 @@ static void address_file_init(
     int index = 0;
 
     pFile = fopen(pFilename, "r");
-    if (pFile) {
-        while (fgets(line, (int) sizeof(line), pFile) != NULL) {
+    if (pFile)
+    {
+        while (fgets(line, (int) sizeof(line), pFile) != NULL)
+        {
             /* ignore comments */
-            if (line[0] != ';') {
+            if (line[0] != ';')
+            {
                 if (sscanf(line, "%7ld %79s %5u %79s %4u", &device_id,
                         &mac_string[0], &snet, &sadr_string[0],
-                        &max_apdu) == 5) {
+                        &max_apdu) == 5)
+                {
                     count =
                         sscanf(mac_string, "%2x:%2x:%2x:%2x:%2x:%2x", &mac[0],
                         &mac[1], &mac[2], &mac[3], &mac[4], &mac[5]);
+
                     src.mac_len = (uint8_t) count;
-                    for (index = 0; index < MAX_MAC_LEN; index++) {
+
+                    for (index = 0; index < MAX_MAC_LEN; index++)
+                    {
                         src.mac[index] = (uint8_t) mac[index];
                     }
+
                     src.net = (uint16_t) snet;
-                    if (snet) {
+                    if (snet)
+                    {
                         count =
                             sscanf(sadr_string, "%2x:%2x:%2x:%2x:%2x:%2x",
                             &mac[0], &mac[1], &mac[2], &mac[3], &mac[4],
                             &mac[5]);
+
                         src.len = (uint8_t) count;
-                        for (index = 0; index < MAX_MAC_LEN; index++) {
+
+                        for (index = 0; index < MAX_MAC_LEN; index++)
+                        {
                             src.adr[index] = (uint8_t) mac[index];
                         }
-                    } else {
+
+                    }
+                    else
+                    {
                         src.len = 0;
-                        for (index = 0; index < MAX_MAC_LEN; index++) {
+                        for (index = 0; index < MAX_MAC_LEN; index++)
+                        {
                             src.adr[index] = 0;
                         }
                     }
+
                     address_add((uint32_t) device_id, max_apdu, &src);
                     address_set_device_TTL((uint32_t) device_id, 0, true);      /* Mark as static entry */
-                }
-            }
-        }
+
+                } // end IF-test of whether we parse device_id, mac_string, snet, sadr_string and max_apdu from present line of file
+
+            } // end IF-test to skip lines in text file which are comments, e.g. lines that begin with ';'
+
+        } // end WHILE-construct to execute code block while there are lines in file to parse
+
         fclose(pFile);
-    }
+
+    } // end IF-block to test if file pointer pFile not null
 
     return;
 }
+
+
 
 
 /****************************************************************************
@@ -261,13 +284,58 @@ static void address_file_init(
  * available. Assume no persistance of memory.                              *
  ****************************************************************************/
 
-void address_init(
-    void)
+void address_init(void)
 {
     struct Address_Cache_Entry *pMatch;
 
     pMatch = Address_Cache;
-    while (pMatch <= &Address_Cache[MAX_ADDRESS_CACHE - 1]) {
+
+// diagnostics added by Ted:
+    int count_of_printfs = 0;
+    int address_cache_entries_remaining = ( (unsigned int)&Address_Cache[MAX_ADDRESS_CACHE - 1] - (unsigned int)pMatch ) / sizeof(*pMatch);
+
+
+
+// 2017-03-16 - added by Ted, studying demo program 'bacwi':
+    printf("; bacnet-stack-0.8.3/src/address.c address_init() starting,\n");
+    printf("; bacnet-stack-0.8.3/src/address.c address_init() size of *pMatch is %u,\n", sizeof(*pMatch));
+
+
+    while (pMatch <= &Address_Cache[MAX_ADDRESS_CACHE - 1])
+    {
+
+// 2017-03-16 - added by Ted, studying demo program 'bacwi':
+        if ( 1 )
+        {
+
+            if ( ( count_of_printfs < 4 ) || ( address_cache_entries_remaining < 4 ) )
+            {
+                printf("; setting address cache entry pMatch at %u, member named 'flags' to zero, &Address_Cache[MAX_ADDRESS_CACHE - 1] holds %u,\n",
+                 (unsigned int)pMatch, (unsigned int)&Address_Cache[MAX_ADDRESS_CACHE - 1]);
+
+                printf("; address_cache entries remaining = %d,\n", address_cache_entries_remaining);
+            }
+            else if ( (count_of_printfs >= 4) && (count_of_printfs < 8) )
+            {
+                printf(";   .\n");
+            }
+            else
+            {
+            }
+
+//            address_cache_entries_remaining = ( ((&Address_Cache[MAX_ADDRESS_CACHE - 1]) - (unsigned int)pMatch) / sizeof(*pMatch) );
+//                                                |+-------------------------------------+                       |
+//                                                +--------------------------------------------------------------+
+
+//            address_cache_entries_remaining = ( (&Address_Cache[MAX_ADDRESS_CACHE - 1] - pMatch) / sizeof(*pMatch) );
+
+//            address_cache_entries_remaining = (unsigned int)&Address_Cache[MAX_ADDRESS_CACHE - 1] - (unsigned int)pMatch;
+            address_cache_entries_remaining = ( (unsigned int)&Address_Cache[MAX_ADDRESS_CACHE - 1] - (unsigned int)pMatch ) / sizeof(*pMatch);
+
+            ++count_of_printfs;
+        }
+
+
         pMatch->Flags = 0;
         pMatch++;
     }
@@ -275,6 +343,9 @@ void address_init(
 
     return;
 }
+
+
+
 
 /****************************************************************************
  * Clear down the cache of any non bound, expired  or reserved entries.     *

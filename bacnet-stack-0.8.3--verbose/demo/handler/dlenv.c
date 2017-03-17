@@ -23,6 +23,9 @@
 *
 *********************************************************************/
 
+
+
+
 /* environment variables used for the command line tools */
 #include <stddef.h>
 #include <stdint.h>
@@ -35,6 +38,14 @@
 #include "handlers.h"
 #include "dlenv.h"
 #include "tsm.h"
+
+
+
+// 2017-03-17 - Ted adding following header file include for Ted's local diagnostics:
+
+#include <diagnostics.h>
+
+
 
 /** @file dlenv.c  Initialize the DataLink configuration. */
 
@@ -186,6 +197,9 @@ void dlenv_maintenance_timer(
 #endif
 }
 
+
+
+
 /** Initialize the DataLink configuration from Environment variables,
  * or else to defaults.
  * @ingroup DataLink
@@ -227,10 +241,28 @@ void dlenv_maintenance_timer(
  *   - BACNET_MSTP_BAUD
  *   - BACNET_MSTP_MAC
  */
-void dlenv_init(
-    void)
+
+
+void dlenv_init( void)
 {
+
     char *pEnv = NULL;
+
+// diagnostics:
+
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("dlenv_init");
+
+
+
+//    printf("\n#\n# dlenv_init():  * * *  PRE-DEBUGGING STATEMENT  * * *\n#\n");
+
+    show_diag(rname, "starting,", dflag_announce);
+    show_diag(rname, "this routine dlenv() designed to configure Data Link network layer from available enrvironment variables,",
+      dflag_announce);
+
 
 #if defined(BACDL_ALL)
     pEnv = getenv("BACNET_DATALINK");
@@ -240,14 +272,20 @@ void dlenv_init(
         datalink_set(NULL);
     }
 #endif
+
+
 #if defined(BACDL_BIP)
 #if defined(BIP_DEBUG)
     BIP_Debug = true;
 #endif
+
     pEnv = getenv("BACNET_IP_PORT");
-    if (pEnv) {
+    if (pEnv)
+    {
         bip_set_port(htons((uint16_t) strtol(pEnv, NULL, 0)));
-    } else {
+    }
+    else
+    {
         /* BIP_Port is statically initialized to 0xBAC0,
          * so if it is different, then it was programmatically altered,
          * and we shouldn't just stomp on it here.
@@ -255,27 +293,34 @@ void dlenv_init(
          * "The range for well-known ports managed by the IANA is 0-1023."
          */
         if (ntohs(bip_get_port()) < 1024)
+        {
             bip_set_port(htons(0xBAC0));
+        }
     }
+
 #elif defined(BACDL_MSTP)
     pEnv = getenv("BACNET_MAX_INFO_FRAMES");
+
     if (pEnv) {
         dlmstp_set_max_info_frames(strtol(pEnv, NULL, 0));
     } else {
         dlmstp_set_max_info_frames(1);
     }
+
     pEnv = getenv("BACNET_MAX_MASTER");
     if (pEnv) {
         dlmstp_set_max_master(strtol(pEnv, NULL, 0));
     } else {
         dlmstp_set_max_master(127);
     }
+
     pEnv = getenv("BACNET_MSTP_BAUD");
     if (pEnv) {
         dlmstp_set_baud_rate(strtol(pEnv, NULL, 0));
     } else {
         dlmstp_set_baud_rate(38400);
     }
+
     pEnv = getenv("BACNET_MSTP_MAC");
     if (pEnv) {
         dlmstp_set_mac_address(strtol(pEnv, NULL, 0));
@@ -283,26 +328,46 @@ void dlenv_init(
         dlmstp_set_mac_address(127);
     }
 #endif
+
+
     pEnv = getenv("BACNET_APDU_TIMEOUT");
-    if (pEnv) {
+    if (pEnv)
+    {
         apdu_timeout_set((uint16_t) strtol(pEnv, NULL, 0));
-    } else {
+    }
+    else
+    {
 #if defined(BACDL_MSTP)
         apdu_timeout_set(60000);
 #endif
     }
+
     pEnv = getenv("BACNET_APDU_RETRIES");
-    if (pEnv) {
+    if (pEnv)
+    {
         apdu_retries_set((uint8_t) strtol(pEnv, NULL, 0));
     }
-    if (!datalink_init(getenv("BACNET_IFACE"))) {
+
+    if (!datalink_init(getenv("BACNET_IFACE")))
+    {
         exit(1);
     }
+
 #if (MAX_TSM_TRANSACTIONS)
     pEnv = getenv("BACNET_INVOKE_ID");
     if (pEnv) {
         tsm_invokeID_set((uint8_t) strtol(pEnv, NULL, 0));
     }
 #endif
+
     dlenv_register_as_foreign_device();
+
+    show_diag(rname, "done.", dflag_announce);
+
 }
+
+
+
+
+
+// --- EOF ---

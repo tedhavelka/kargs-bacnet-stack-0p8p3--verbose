@@ -23,6 +23,9 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *
 *********************************************************************/
+
+
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stddef.h>
@@ -44,6 +47,24 @@
 #include "debug.h"
 /* OS Specific include */
 #include "net.h"
+
+
+// 2017-03-13 - Ted adding diagnostics from Ted's local C projects:
+// NOTE:  can't get this to work, GNU make keeps complaining
+//  about header file not found, in spite of -I option defined in
+//  exported environment variable . . . Ted to investigate this
+//  issue later:
+
+// #include <diagnostics.h>
+
+
+
+
+// 2017-03-17 FRI - added by Ted for code tracing and diagnostics:
+#define SOURCE_FILE_IDENTIFIER__2017_INQUIRY "~0.8.3/ports/linux/dlmspt.c"
+
+
+
 
 /** @file linux/dlmstp.c  Provides Linux-specific DataLink functions for MS/TP. */
 
@@ -179,41 +200,57 @@ int dlmstp_send_pdu(
     return bytes_sent;
 }
 
+
+
+
+
 uint16_t dlmstp_receive(
-    BACNET_ADDRESS * src,       /* source address */
-    uint8_t * pdu,      /* PDU data */
-    uint16_t max_pdu,   /* amount of space available in the PDU  */
-    unsigned timeout)
-{       /* milliseconds to wait for a packet */
+  BACNET_ADDRESS * src,  /* source address */
+  uint8_t * pdu,         /* PDU data */
+  uint16_t max_pdu,      /* amount of space available in the PDU  */
+  unsigned timeout       /* milliseconds to wait for a packet */
+)
+{
     uint16_t pdu_len = 0;
     struct timespec abstime;
 
     (void) max_pdu;
+
     /* see if there is a packet available, and a place
        to put the reply (if necessary) and process it */
     pthread_mutex_lock(&Receive_Packet_Mutex);
     get_abstime(&abstime, timeout);
     pthread_cond_timedwait(&Receive_Packet_Flag, &Receive_Packet_Mutex,
         &abstime);
-    if (Receive_Packet.ready) {
-        if (Receive_Packet.pdu_len) {
+
+    if (Receive_Packet.ready)
+    {
+        if (Receive_Packet.pdu_len)
+        {
             MSTP_Packets++;
-            if (src) {
-                memmove(src, &Receive_Packet.address,
-                    sizeof(Receive_Packet.address));
+            if (src)
+            {
+                memmove(src, &Receive_Packet.address, sizeof(Receive_Packet.address));
             }
-            if (pdu) {
-                memmove(pdu, &Receive_Packet.pdu,
-                    sizeof(Receive_Packet.pdu));
+
+            if (pdu)
+            {
+                memmove(pdu, &Receive_Packet.pdu, sizeof(Receive_Packet.pdu));
             }
+
             pdu_len = Receive_Packet.pdu_len;
         }
+
         Receive_Packet.ready = false;
     }
+
     pthread_mutex_unlock(&Receive_Packet_Mutex);
 
     return pdu_len;
 }
+
+
+
 
 static void *dlmstp_master_fsm_task(
     void *pArg)
@@ -671,52 +708,90 @@ void dlmstp_get_broadcast_address(
     return;
 }
 
-bool dlmstp_init(
-    char *ifname)
+
+
+
+
+bool dlmstp_init(char *ifname)
 {
+
     unsigned long hThread = 0;
     int rv = 0;
 
+//    DIAG__SET_ROUTINE_NAME("dlmstp_init");
+
+
     /* initialize PDU queue */
-    Ringbuf_Init(&PDU_Queue, (uint8_t *) & PDU_Buffer,
-        sizeof(struct mstp_pdu_packet), MSTP_PDU_PACKET_COUNT);
+    Ringbuf_Init(&PDU_Queue, (uint8_t *) & PDU_Buffer, sizeof(struct mstp_pdu_packet), MSTP_PDU_PACKET_COUNT);
+
     /* initialize packet queue */
     Receive_Packet.ready = false;
     Receive_Packet.pdu_len = 0;
     rv = pthread_cond_init(&Receive_Packet_Flag, NULL);
-    if (rv != 0) {
+    if (rv != 0)
+    {
         fprintf(stderr,
             "MS/TP Interface: %s\n cannot allocate PThread Condition.\n",
             ifname);
         exit(1);
     }
+
     rv = pthread_mutex_init(&Receive_Packet_Mutex, NULL);
-    if (rv != 0) {
+
+    if (rv != 0)
+    {
         fprintf(stderr,
             "MS/TP Interface: %s\n cannot allocate PThread Mutex.\n", ifname);
         exit(1);
     }
+
     /* initialize hardware */
-    if (ifname) {
+    if (ifname)
+    {
         RS485_Set_Interface(ifname);
 #if PRINT_ENABLED
+        printf("\n# %s/dlmstp_init():  following line regarding interface from %s/dlmstp.c:\n",
+          SOURCE_FILE_IDENTIFIER__2017_INQUIRY, SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
         fprintf(stderr, "MS/TP Interface: %s\n", ifname);
 #endif
     }
+    else
+    {
+        printf("# %s/dlmtp_init():  variable 'ifname' not defined early on while this routine initializing hardware,\n",
+          SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
+    }
+
+
+
+    printf("# %s/dlmtp_init():  calling routine to initialize RS-485 . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     RS485_Initialize();
+
+    printf("# %s/dlmtp_init():  zeroing MSTP port input and output buffers, setting their sizes . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     MSTP_Port.InputBuffer = &RxBuffer[0];
     MSTP_Port.InputBufferSize = sizeof(RxBuffer);
     MSTP_Port.OutputBuffer = &TxBuffer[0];
     MSTP_Port.OutputBufferSize = sizeof(TxBuffer);
+
+    printf("# %s/dlmtp_init():  getting time of day . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     gettimeofday(&start, NULL);
+
+    printf("# %s/dlmtp_init():  setting values of the 'Silence' timer . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     MSTP_Port.SilenceTimer = Timer_Silence;
     MSTP_Port.SilenceTimerReset = Timer_Silence_Reset;
+
+    printf("# %s/dlmtp_init():  calling routine MSTP_Init(&MSTP_Port) . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     MSTP_Init(&MSTP_Port);
+
+
+
 #if PRINT_ENABLED
+    printf("# %s/dlmtp_init():  following three lines regarding interface from %s/dlmstp.c:\n",
+      SOURCE_FILE_IDENTIFIER__2017_INQUIRY, SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     fprintf(stderr, "MS/TP MAC: %02X\n", MSTP_Port.This_Station);
     fprintf(stderr, "MS/TP Max_Master: %02X\n", MSTP_Port.Nmax_master);
     fprintf(stderr, "MS/TP Max_Info_Frames: %u\n", MSTP_Port.Nmax_info_frames);
 #endif
+
     /* start the threads */
     /*    rv = pthread_create(&hThread, NULL, dlmstp_receive_fsm_task, NULL); */
     /*    if (rv != 0) {
@@ -728,7 +803,12 @@ bool dlmstp_init(
     }
 
     return true;
-}
+
+} // end routine dlmstp_init()
+
+
+
+
 
 #ifdef TEST_DLMSTP
 #include <stdio.h>
@@ -743,23 +823,34 @@ void apdu_handler(
     (void) pdu_len;
 }
 
+
+
+
 static char *Network_Interface = NULL;
 
-int main(
-    int argc,
-    char *argv[])
+
+
+
+int main(int argc, char *argv[])
 {
+
     uint16_t pdu_len = 0;
 
+
+    printf("\n# ~0.8.3/ports/linux/dlmstp.c main():  starting,\n\n");
+
     /* argv has the "COM4" or some other device */
-    if (argc > 1) {
+    if (argc > 1)
+    {
         Network_Interface = argv[1];
     }
+
     dlmstp_set_baud_rate(38400);
     dlmstp_set_mac_address(0x05);
     dlmstp_set_max_info_frames(DEFAULT_MAX_INFO_FRAMES);
     dlmstp_set_max_master(DEFAULT_MAX_MASTER);
     dlmstp_init(Network_Interface);
+
     /* forever task */
     for (;;) {
         pdu_len = dlmstp_receive(NULL, NULL, 0, UINT_MAX);
@@ -767,6 +858,12 @@ int main(
             MSTP_Port.SourceAddress, MSTP_Port.This_Station, NULL, 0);
     }
 
+
+    printf("\n# ~0.8.3/ports/linux/dlmstp.c main():  done, returning to calling code . . .\n\n");
+
     return 0;
 }
+
+
+
 #endif

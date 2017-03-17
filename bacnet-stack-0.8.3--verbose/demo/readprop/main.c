@@ -56,7 +56,21 @@
 #include "dlenv.h"
 
 
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 // 2017-03-09 - Ted pulling in his own local diagnostics functions:
+//
+//  Note:  your're going to need to pass to the linker options
+//   like this in order to link the diagnostics shared object
+//   file:
+//
+//   -L/usr/local/lib/libtestlib-0p1 -ltestlib-0p1
+//
+//   These linker options can be put into a makefile variable and or
+//   into the makefile recipe line which calls GNU ld to perform the
+//   final object code linking.  - TMH
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//
 
 #include <diagnostics.h>
 
@@ -342,6 +356,18 @@ int main(int argc, char *argv[])
     last_seconds = time(NULL);
     timeout_seconds = (apdu_timeout() / 1000) * apdu_retries();
 
+    {
+        show_diag(rname , "setting number of seconds to time out equal to:",
+          dflag_verbose);
+        snprintf(lbuf, SIZE__DIAG_MESSAGE, "APDU timeout of %d times APDU retries equal to %d,",
+          apdu_timeout(), apdu_retries());
+        show_diag(rname, lbuf, dflag_verbose);
+        show_diag(rname , "'Timeout_Milliseconds' and 'Number_Of_Retries' defined in ~0.8.3/src/apdu.c.",
+          dflag_verbose);
+    }
+
+
+
     /* try to bind with the device */
     show_diag(rname, "calling address_bind_request() routine with last parameter of &Target_Address . . .",
       dflag_verbose);
@@ -386,7 +412,7 @@ int main(int argc, char *argv[])
 
 
 
-    show_diag(rname, "entering loop whihc will run/poll until timeout . . .", dflag_verbose);
+    show_diag(rname, "entering loop which will run/poll until timeout . . .", dflag_verbose);
 
     /* loop forever */
     for (;;)
