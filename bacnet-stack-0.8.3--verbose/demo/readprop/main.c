@@ -495,7 +495,7 @@ int main(int argc, char *argv[])
         /* keep track of time for next check */
         last_seconds = current_seconds;
 
-    }
+    } // end FOR-loop construct to loop forever, or until time out
 
 
     if (Error_Detected)
