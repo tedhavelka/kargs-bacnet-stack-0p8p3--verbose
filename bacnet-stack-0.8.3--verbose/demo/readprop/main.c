@@ -22,7 +22,63 @@
 *
 *********************************************************************/
 
+
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// 2017-03-31 - Ted noting first working use of bacrp, how to invoke
+//  following call to bacwi which determines BACnet master device
+//  IDs or identifying strings:
+//
+//  First, determine BACnet device instances,
+//
+//
+//    .../bacnet-stack-0.8.3/demo/whois/bacwi -1
+//
+//  
+//  should see result akin to,
+//
+//
+//    RS485: Initializing /dev/ttyUSB0 at Baud Rate 38400=success!
+//    MS/TP MAC: 7F
+//    MS/TP Max_Master: 7F
+//    MS/TP Max_Info_Frames: 1
+//    Received I-Am Request from 133005, MAC = 5.0.0.0.0.0
+//    Received I-Am Request from 133006, MAC = 6.0.0.0.0.0
+//    ;Device   MAC (hex)            SNET  SADR (hex)           APDU
+//    ;-------- -------------------- ----- -------------------- ----
+//      133005  05                   0     00                   224  
+//      133006  06                   0     00                   224  
+//    ;
+//    ; Total Devices: 2
+//
+//
+//  Six digit numbers beginning with '133' are our device instances.
+//  Now calling BACnet read property demo program:
+//
+//
+//    .../bacnet-stack-0.8.3/demo/readprop$ ./bacrp 133006 0 1 8
+//    RS485: Initializing /dev/ttyUSB0 at Baud Rate 38400=success!
+//    MS/TP MAC: 7F
+//    MS/TP Max_Master: 7F
+//    MS/TP Max_Info_Frames: 1
+//    539.000000
+//
+//
+//
+//
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+
+
+
+
+
+
+
 /* command line tool that sends a BACnet service, and displays the reply */
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -232,26 +288,54 @@ int main(int argc, char *argv[])
     time_t timeout_seconds = 0;
     bool found = false;
 
+
 // diagnostics added by Ted:
+
+#define ONE_HUNDRED (100)
+#define ONE_THOUSAND (1000)
+
+    static unsigned int routine_calls = 0;
+    static unsigned int count_routine_called_n_times = 0;
+    unsigned int diagnostic_period_main_comms_loop = ONE_HUNDRED;
+
     char lbuf[SIZE__DIAG_MESSAGE];
 
     unsigned int dflag_announce   = DIAGNOSTICS_ON;
     unsigned int dflag_verbose    = DIAGNOSTICS_ON;
 
     unsigned int dflag_parameter_parsing      = DIAGNOSTICS_ON;
-    unsigned int dflag_comms_loop             = DIAGNOSTICS_ON;
+    unsigned int dflag_comms_loop             = DIAGNOSTICS_OFF;  // turned off 2017-03-22 by Ted,
     unsigned int dflag_comms_loop_break       = DIAGNOSTICS_ON;
     unsigned int dflag_target_address_summary = DIAGNOSTICS_ON;
+    unsigned int dflag_mark = DIAGNOSTICS_ON;
+    unsigned int dflag_step = DIAGNOSTICS_ON;
 
     DIAG__SET_ROUTINE_NAME("bacrp main()");
 
 
-//    printf("\n");
-//    printf("##\n");
+
     show_diag(rname, "#", dflag_announce);
     show_diag(rname, "# starting,", dflag_announce);
     show_diag(rname, "#", dflag_announce);
 
+
+    {
+        ++routine_calls;
+
+        if ( routine_calls >= diagnostic_period_main_comms_loop )
+        {
+            routine_calls = 0;
+            ++count_routine_called_n_times;
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "called %u times,", (count_routine_called_n_times * diagnostic_period_main_comms_loop));
+            show_diag(rname, lbuf, dflag_verbose);
+        }
+
+//        if ( count_routine_called_n_times )
+//        {
+//            snprintf(lbuf, SIZE__DIAG_MESSAGE, "called %u times,", (count_routine_called_n_times * diagnostic_period_main_comms_loop));
+//            show_diag(rname, lbuf, dflag_verbose);
+//        }
+    }
 
 
     if (argc < 5)
@@ -343,14 +427,30 @@ int main(int argc, char *argv[])
       BACNET_MAX_INSTANCE);
     show_diag(rname, lbuf, dflag_verbose);
 
+    show_diag(rname, "- INITIALIZING STEP 1 -", dflag_step);
+    show_diag(rname, "calling Device_Set_Object_Instance_Number() . . .", dflag_step);
     Device_Set_Object_Instance_Number(BACNET_MAX_INSTANCE);
+
+    show_diag(rname, "- INITIALIZING STEP 2 -", dflag_step);
+    show_diag(rname, "calling address_init() . . .", dflag_step);
     address_init();
+
+    show_diag(rname, "- INITIALIZING STEP 3 -", dflag_step);
+    show_diag(rname, "calling Init_Service_Handlers() . . .", dflag_step);
     Init_Service_Handlers();
+
+    show_diag(rname, "- INITIALIZING STEP 4 -", dflag_step);
+    show_diag(rname, "calling dlenv_init() . . .", dflag_step);
     dlenv_init();
+
+    show_diag(rname, "- INITIALIZING STEP 5 -", dflag_step);
+    show_diag(rname, "calling atexit() . . .", dflag_step);
     atexit(datalink_cleanup);
 
 
+
     /* configure the timeout values */
+    show_diag(rname, "- AFTER LAST INITIALIZING STEP 5, CALL TO ATEXIT() ROUTINE -", dflag_step);
     show_diag(rname, "configuring timeout values . . .", dflag_verbose);
 
     last_seconds = time(NULL);
@@ -369,9 +469,16 @@ int main(int argc, char *argv[])
 
 
     /* try to bind with the device */
-    show_diag(rname, "calling address_bind_request() routine with last parameter of &Target_Address . . .",
+    show_diag(rname, "First time and above communications loop calling address_bind_request(),",
       dflag_verbose);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "+  with parameters 'Target Device Object Instance' set to %d, address of 'max_apdu', address of 'Target_Address',",
+      Target_Device_Object_Instance);
+    show_diag(rname, lbuf, dflag_verbose);
+    show_diag(rname, "+  calling . . .", dflag_verbose);
+
     found = address_bind_request(Target_Device_Object_Instance, &max_apdu, &Target_Address);
+
+    show_diag(rname, "back from routine address_bind_request(),", dflag_verbose);
 
     if (!found)
     {
@@ -448,10 +555,18 @@ int main(int argc, char *argv[])
 
 
 
-        if (found)
+
+
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+// 2017-03-20 MON - Ted trying something to see what happens in spite of  failed address binding:
+
+/*
+        if (0)
         {
             if (Request_Invoke_ID == 0)
             {
+                show_diag(rname, "- MARK 1 - calling routine Send_Read_Property_Request() . . .", dflag_mark);
                 Request_Invoke_ID =
                     Send_Read_Property_Request(Target_Device_Object_Instance,
                     Target_Object_Type, Target_Object_Instance,
@@ -459,25 +574,79 @@ int main(int argc, char *argv[])
             }
             else if (tsm_invoke_id_free(Request_Invoke_ID))
             {
+                show_diag(rname, "- MARK 2 -", dflag_mark);
                 break;
             }
             else if (tsm_invoke_id_failed(Request_Invoke_ID))
             {
+                show_diag(rname, "- MARK 3 -", dflag_mark);
                 fprintf(stderr, "\rError: TSM Timeout!\r\n");
                 tsm_free_invoke_id(Request_Invoke_ID);
                 Error_Detected = true;
+//                / *   try again or abort?   * /
+                break;
+            }
+        }
+*/
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// - MAIN COMM'S LOOP TEST -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+        if (found)
+//        if ( 1 )
+        {
+show_diag(rname, "- MARK 4 - entering 'if found' block unconditionally . . .", dflag_mark);
+
+            if (Request_Invoke_ID == 0)
+            {
+show_diag(rname, "- MARK 5 - calling routine Request_Invoke_ID() . . .", dflag_mark);
+                Request_Invoke_ID =
+                    Send_Read_Property_Request(Target_Device_Object_Instance,
+                    Target_Object_Type, Target_Object_Instance,
+                    Target_Object_Property, Target_Object_Index);
+            }
+            else if (tsm_invoke_id_free(Request_Invoke_ID))
+            {
+snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 6 PRE - Request_Invoke_ID = %u,", Request_Invoke_ID); 
+show_diag(rname, lbuf, dflag_mark);
+
+snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 6 PRE - calling tsm_invoke_id_free() with value of %u returns 'true',", Request_Invoke_ID);
+show_diag(rname, lbuf, dflag_mark);
+
+show_diag(rname, "- MARK 6 - therefore breaking out of bacrp main communications loop . . .", dflag_mark);
+                break;
+            }
+            else if (tsm_invoke_id_failed(Request_Invoke_ID))
+            {
+snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 7 PRE - calling tsm_invoke_id_failed() with value %u,", Request_Invoke_ID); 
+show_diag(rname, lbuf, dflag_mark);
+
+                fprintf(stderr, "\rError: TSM Timeout!\r\n");
+                tsm_free_invoke_id(Request_Invoke_ID);
+                Error_Detected = true;
+
                 /* try again or abort? */
+show_diag(rname, "- MARK 7 - therefore breaking out of bacrp main communications loop . . .", dflag_mark);
                 break;
             }
         }
         else
         {
+show_diag(rname, "- MARK 8 - incrementing timer to limit main communications loop,", dflag_mark);
+
             /* increment timer - exit if timed out */
             elapsed_seconds += (current_seconds - last_seconds);
             if (elapsed_seconds > timeout_seconds)
             {
                 printf("\rError: APDU Timeout!\r\n");
                 Error_Detected = true;
+
+show_diag(rname, "- MARK 8 - Application Protocol Data Unit (APDU) timeout reached!", dflag_mark);
+show_diag(rname, "- MARK 8 - therefore breaking out of bacrp main communications loop . . .", dflag_mark);
                 break;
             }
         } // end IF-ELSE block testing "if (found)"
@@ -498,11 +667,21 @@ int main(int argc, char *argv[])
     } // end FOR-loop construct to loop forever, or until time out
 
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// - MAIN COMM'S LOOP TEST -
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
     if (Error_Detected)
+    {
+        show_diag(rname, "* * *  Error detected  * * *\n", dflag_announce);
+        show_diag(rname, "returning positive integer value one (1) to calling code or process . . .\n",
+          dflag_announce);
         return 1;
+    }
+
     return 0;
 
-}
+} // end of bacrp routine main()
 
 
 

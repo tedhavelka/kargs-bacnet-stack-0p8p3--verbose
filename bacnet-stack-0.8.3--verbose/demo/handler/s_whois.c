@@ -44,6 +44,14 @@
 #include "txbuf.h"
 #include "client.h"
 
+
+
+// 2017-03-21 - Added by Ted:
+
+#include <diagnostics.h>
+
+
+
 /** @file s_whois.c  Send a Who-Is request. */
 
 /** Send a Who-Is request to a remote network for a specific device, a range,
@@ -115,15 +123,46 @@ void Send_WhoIs_Global(
     int32_t high_limit
 )
 {
+
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("s_whois.c routine Send_WhoIs_Global");
+
+
+    show_diag(rname, "starting,", dflag_announce);
+
     BACNET_ADDRESS dest;
 
+
+    show_diag(rname, "within an IF-statement, calling dcc_communication_enabled() . . .", dflag_verbose);
     if (!dcc_communication_enabled())
+    {
         return;
+    }
+
+    show_diag(rname, "passed the IF-statement and continuing on,", dflag_verbose);
+
 
     /* Who-Is is a global broadcast */
+    show_diag(rname, "calling datalink_get_broadcast_address() . . .", dflag_verbose);
     datalink_get_broadcast_address(&dest);
 
+
+// 2017-03-21 - added by Ted:
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "obtained broadcast address of %u,", dest.len);
+    show_diag(rname, lbuf, dflag_verbose);
+
+
+    show_diag(rname, "calling Send_WhoIs_To_Network() with address of locally declared BACNET_ADDRESS type 'dest' . . .",
+      dflag_verbose);
     Send_WhoIs_To_Network(&dest, low_limit, high_limit);
+
+    show_diag(rname, "back from call to Send_WhoIs_To_Network(),", dflag_verbose);
+    show_diag(rname, "done.", dflag_announce);
+
 }
 
 
@@ -202,6 +241,10 @@ void Send_WhoIs_Remote(
     Send_WhoIs_To_Network(target_address, low_limit, high_limit);
 }
 
+
+
+
+
 /** Send a global Who-Is request for a specific device, a range, or any device.
  * @ingroup DMDDB
  * This was the original Who-Is broadcast but the code was moved to the more
@@ -214,9 +257,23 @@ void Send_WhoIs_Remote(
  * @param low_limit [in] Device Instance Low Range, 0 - 4,194,303 or -1
  * @param high_limit [in] Device Instance High Range, 0 - 4,194,303 or -1
  */
+
 void Send_WhoIs(
     int32_t low_limit,
     int32_t high_limit)
 {
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("s_whois.c routine Send_WhoIs");
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "starting, calling Send_WhoIs_Global() with low and high limits %d, %d . . .",
+      low_limit, high_limit);
+    show_diag(rname, lbuf, dflag_verbose);
+
     Send_WhoIs_Global(low_limit, high_limit);
+
+    show_diag(rname, "done.", dflag_verbose);
+
 }

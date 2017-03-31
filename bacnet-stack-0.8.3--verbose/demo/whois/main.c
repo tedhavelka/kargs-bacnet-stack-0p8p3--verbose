@@ -149,11 +149,9 @@ void address_table_add(
 
 
 
-void my_i_am_handler(
-    uint8_t * service_request,
-    uint16_t service_len,
-    BACNET_ADDRESS * src)
+void my_i_am_handler( uint8_t * service_request, uint16_t service_len, BACNET_ADDRESS * src )
 {
+
     int len = 0;
     uint32_t device_id = 0;
     unsigned max_apdu = 0;
@@ -161,20 +159,27 @@ void my_i_am_handler(
     uint16_t vendor_id = 0;
 
     (void) service_len;
+
     len =
         iam_decode_service_request(service_request, &device_id, &max_apdu,
         &segmentation, &vendor_id);
+
 #if PRINT_ENABLED
     fprintf(stderr, "Received I-Am Request");
 #endif
-    if (len != -1) {
+
+    if (len != -1)
+    {
 #if PRINT_ENABLED
         fprintf(stderr, " from %lu, MAC = %d.%d.%d.%d.%d.%d\n",
             (unsigned long) device_id, src->mac[0], src->mac[1], src->mac[2],
             src->mac[3], src->mac[4], src->mac[5]);
 #endif
+
         address_table_add(device_id, max_apdu, src);
-    } else {
+    }
+    else
+    {
 #if PRINT_ENABLED
         fprintf(stderr, ", but unable to decode it.\n");
 #endif
@@ -182,6 +187,10 @@ void my_i_am_handler(
 
     return;
 }
+
+
+
+
 
 void MyAbortHandler(
     BACNET_ADDRESS * src,

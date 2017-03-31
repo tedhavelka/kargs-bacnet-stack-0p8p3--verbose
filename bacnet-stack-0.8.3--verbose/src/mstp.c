@@ -48,17 +48,27 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #if PRINT_ENABLED
 #include <stdio.h>
 #endif
+
 #include "mstp.h"
 #include "crc.h"
 #include "rs485.h"
 #include "mstptext.h"
+
 #if !defined(DEBUG_ENABLED)
 #define DEBUG_ENABLED 1
 #endif
+
 #include "debug.h"
+
+
+// 2017-03-22 - added by Ted, adding simple local shared library diagnostics:
+#include <diagnostics.h>
+
+
 
 #if PRINT_ENABLED
 #undef PRINT_ENABLED_RECEIVE
@@ -110,6 +120,10 @@ static inline void printf_master(
     format = format;
 }
 #endif
+
+
+
+
 
 /* MS/TP Frame Format */
 /* All frames are of the following format: */
@@ -1194,6 +1208,17 @@ void MSTP_Slave_Node_FSM(
 
 void MSTP_Init(volatile struct mstp_port_struct_t *mstp_port)
 {
+
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("~0.8.3/src/mstp.c MSTP_Init()");
+
+
+    show_diag(rname, "starting,", dflag_announce);
+    show_diag(rname, "setting a bunch of mstp_port members to default values,", dflag_verbose);
+    show_diag(rname, "mostly values of zero and 'false' . . .", dflag_verbose);
+
     if (mstp_port)
     {
 #if 0
@@ -1229,11 +1254,17 @@ void MSTP_Init(volatile struct mstp_port_struct_t *mstp_port)
         mstp_port->ReceivedValidFrame = false;
         mstp_port->ReceivedValidFrameNotForUs = false;
         mstp_port->RetryCount = 0;
+
+    show_diag(rname, "calling routine mstp_port->SilenceTimerReset() with mstp_port itself as parameter . . .", dflag_announce);
         mstp_port->SilenceTimerReset((void *) mstp_port);
+
         mstp_port->SoleMaster = false;
         mstp_port->SourceAddress = 0;
         mstp_port->TokenCount = 0;
     }
+
+    show_diag(rname, "returning to caller . . .", dflag_announce);
+
 }
 
 

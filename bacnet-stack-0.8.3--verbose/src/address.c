@@ -43,6 +43,29 @@
 #include "bacdcode.h"
 #include "readrange.h"
 
+
+
+//
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+// 2017-03-09 - Ted pulling in his own local diagnostics functions:
+//
+//  Note:  your're going to need to pass to the linker options
+//   like this in order to link the diagnostics shared object
+//   file:
+//
+//   -L/usr/local/lib/libtestlib-0p1 -ltestlib-0p1
+//
+//   These linker options can be put into a makefile variable and or
+//   into the makefile recipe line which calls GNU ld to perform the
+//   final object code linking.  - TMH
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//
+
+#include <diagnostics.h>
+
+
+
+
 /** @file address.c  Handle address binding */
 
 /* This module is used to handle the address binding that */
@@ -71,6 +94,10 @@ static struct Address_Cache_Entry {
 #define BAC_ADDR_LONG_TIME  BAC_ADDR_SECS_1DAY
 #define BAC_ADDR_SHORT_TIME BAC_ADDR_SECS_1HOUR
 #define BAC_ADDR_FOREVER    0xFFFFFFFF  /* Permenant entry */
+
+
+
+
 
 bool address_match(
     BACNET_ADDRESS * dest,
@@ -538,60 +565,190 @@ void address_add(
     return;
 }
 
+
+
+
+
 /* returns true if device is already bound */
 /* also returns the address and max apdu if already bound */
+
 bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRESS * src)
 {
+
     bool found = false; /* return value */
     struct Address_Cache_Entry *pMatch;
 
+
+// diagnostics:
+
+    int while_loop_count = 0;
+
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_routine_calls = DIAGNOSTICS_ON;
+
+// 2017-03-30 - this routine called frequently and rapidly, so Ted adding these:
+
+#define ONE_HUNDRED (100)
+#define ONE_THOUSAND (1000)
+
+    static unsigned int routine_calls = 0;
+//    static unsigned int routine_kilo_calls = 0;
+    static unsigned int routine_calls_multiple = 0;
+    static unsigned int mark_routine_every_n_calls = ONE_HUNDRED;
+
+
+
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+    DIAG__SET_ROUTINE_NAME("address_bind_request");
+
+
+
+// 2017-03-30 - this routine called frequently and rapidly, so Ted adding routine count tracking:
+
+    if ( 1 )
+    {
+        if ( routine_calls == 0 )
+        {
+            if ( routine_calls_multiple == 0 )
+            {
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "first time called,");
+            }
+            else
+            {
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "called %u times,", (routine_calls_multiple * mark_routine_every_n_calls));
+            }
+
+            show_diag(rname, lbuf, dflag_routine_calls);
+        }
+        else
+        {
+            dflag_announce = DIAGNOSTICS_OFF;
+            dflag_verbose = DIAGNOSTICS_OFF;
+        }
+
+        ++routine_calls;
+
+        if ( routine_calls >= mark_routine_every_n_calls )
+        {
+            ++routine_calls_multiple;
+            routine_calls = 0;
+        }
+    }
+
+
+
+
+    show_diag(rname, "starting,", dflag_announce);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "caller sends BACnet device id = %u,", device_id);
+    show_diag(rname, lbuf, dflag_verbose);
+
+
     /* existing device - update address info if currently bound */
+
+    show_diag(rname, "in source file src/address.c setting pointer pMatch = Address_Cache . . .",
+      dflag_verbose);
+
     pMatch = Address_Cache;
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "pMatch = %u,", pMatch);
+    show_diag(rname, lbuf, dflag_verbose);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "MAX_ADDRESS_CACHE = %u,", MAX_ADDRESS_CACHE);
+    show_diag(rname, lbuf, dflag_verbose);
+    show_diag(rname, "", dflag_verbose);
+    show_diag(rname, "beginning WHILE-loop to see if already bound to device whose id caller sends us:", dflag_verbose);
+
+
     while (pMatch <= &Address_Cache[MAX_ADDRESS_CACHE - 1])
     {
+        ++while_loop_count;
+
+        snprintf(lbuf, SIZE__DIAG_MESSAGE, "while loop iteration %d:  pMatch = %u, less than &Address_Cache[%u] = %u,",
+          while_loop_count, pMatch, (MAX_ADDRESS_CACHE - 1), &Address_Cache[MAX_ADDRESS_CACHE - 1]);
+        show_diag(rname, lbuf, dflag_verbose);
+
         if (((pMatch->Flags & BAC_ADDR_IN_USE) != 0) && (pMatch->device_id == device_id))
         {
+
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "checking a couple things . . . pMatch->device_id = %u, device_id = %u,",
+              pMatch->device_id, device_id);
+            show_diag(rname, lbuf, dflag_verbose);
+
             if ((pMatch->Flags & BAC_ADDR_BIND_REQ) == 0)       /* Already bound */
             {
+                show_diag(rname, "NOTE - looks like BACnet device address from calling code is already bound,", dflag_verbose);
+                show_diag(rname, "NOTE - setting variable 'found' to true,", dflag_verbose);
+
                 found = true;
                 *src = pMatch->address;
                 *max_apdu = pMatch->max_apdu;
+
                 if ((pMatch->Flags & BAC_ADDR_SHORT_TTL) != 0)  /* Was picked up opportunistacilly */
                 {
                     pMatch->Flags &= ~BAC_ADDR_SHORT_TTL;       /* Convert to normal entry  */
                     pMatch->TimeToLive = BAC_ADDR_LONG_TIME;    /* And give it a decent time to live */
                 }
+
             }
+
+// 2017-03-30 -
+            show_diag(rname, "returning 'true' to calling code . . .", dflag_announce);
+            show_diag(rname, ".", dflag_announce);
+
             return (found);     /* True if bound, false if bind request outstanding */
-        }
+
+        } // end conditional code block which runs when pMatch points to address-in-use, and stored address matches caller's sent address
+
         pMatch++;
     }
 
+
     /* Not there already so look for a free entry to put it in */
     pMatch = Address_Cache;
-    while (pMatch <= &Address_Cache[MAX_ADDRESS_CACHE - 1]) {
-        if ((pMatch->Flags & (BAC_ADDR_IN_USE | BAC_ADDR_RESERVED)) == 0) {
+
+    while (pMatch <= &Address_Cache[MAX_ADDRESS_CACHE - 1])
+    {
+        if ((pMatch->Flags & (BAC_ADDR_IN_USE | BAC_ADDR_RESERVED)) == 0)
+        {
             /* In use and awaiting binding */
             pMatch->Flags = (uint8_t) (BAC_ADDR_IN_USE | BAC_ADDR_BIND_REQ);
             pMatch->device_id = device_id;
             /* No point in leaving bind requests in for long haul */
             pMatch->TimeToLive = BAC_ADDR_SHORT_TIME;
             /* now would be a good time to do a Who-Is request */
+
+// 2017-03-30 -
+            show_diag(rname, "returning 'false' to calling code . . .", dflag_announce);
+            show_diag(rname, ".", dflag_announce);
+
             return (false);
         }
         pMatch++;
     }
 
+
     /* No free entries, See if we can squeeze it in by dropping an existing one */
+    show_diag(rname, "calling routine in attempt to remove oldest bound device entry . . .",
+      dflag_verbose);
     pMatch = address_remove_oldest();
-    if (pMatch != NULL) {
+
+    if (pMatch != NULL)
+    {
         pMatch->Flags = (uint8_t) (BAC_ADDR_IN_USE | BAC_ADDR_BIND_REQ);
         pMatch->device_id = device_id;
         /* No point in leaving bind requests in for long haul */
         pMatch->TimeToLive = BAC_ADDR_SHORT_TIME;
     }
 
+
+    show_diag(rname, "reached end of this routine, no match found and no free device table entries freed,",
+      dflag_verbose);
+    show_diag(rname, "returning 'false' to calling code . . .", dflag_announce);
+    show_diag(rname, ".", dflag_announce);
+
     return (false);
+
 }
 
 
@@ -1065,9 +1222,12 @@ void testAddress(
     }
 }
 
+
+
+
+
 #ifdef TEST_ADDRESS
-int main(
-    void)
+int main(void)
 {
     Test *pTest;
     bool rc;

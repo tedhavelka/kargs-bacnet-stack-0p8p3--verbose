@@ -50,11 +50,21 @@
 /* include the device object */
 #include "device.h"     /* me */
 
+
+// 2017-03-22 - added by Ted:
+
+#include <diagnostics.h>
+
+
+
 #if defined(__BORLANDC__) || defined(_WIN32)
 /* seems to not be defined in time.h as specified by The Open Group */
 /* difference from UTC and local standard time  */
 long int timezone;
 #endif
+
+
+
 
 /* note: you really only need to define variables for
    properties that are writable or that may change.
@@ -208,32 +218,55 @@ uint32_t Device_Object_Instance_Number(
 
 bool Device_Set_Object_Instance_Number(uint32_t object_id)
 {
+
     bool status = true; /* return value */
 
-printf("#\n");
-printf("# - 2017-03-16 THU -\n");
-printf("# ../bacnet-stack-0.8.3/demo/object/device-client.c routine Device_Set_Object_Instance_Number() starting,\n");
-printf("#\n");
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
 
-FILE* fp_object_diagnotiscs = fopen("/home/ted/z--kargs-bacnet-diagnostics.txt", "a+");
-if ( fp_object_diagnotiscs != NULL )
-{
-    fprintf(fp_object_diagnotiscs, "%s", "# ../bacnet-stack-0.8.3/demo/object/device-client.c routine Device_Set_Object_Instance_Number() starting,\n");
-    fclose(fp_object_diagnotiscs);
-}
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("Device_Set_Object_Instance_Number()");
 
 
-    if (object_id <= BACNET_MAX_INSTANCE)
+
+// Diagnostics added by Ted on about 2017-03-15:
+    {
+        printf("#\n");
+        printf("# - 2017-03-16 THU -\n");
+        printf("# ../bacnet-stack-0.8.3/demo/object/device-client.c routine Device_Set_Object_Instance_Number() starting,\n");
+        printf("#\n");
+
+        FILE* fp_object_diagnotiscs = fopen("/home/ted/z--kargs-bacnet-diagnostics.txt", "a+");
+        if ( fp_object_diagnotiscs != NULL )
+        {
+            fprintf(fp_object_diagnotiscs, "%s", "# ../bacnet-stack-0.8.3/demo/object/device-client.c routine Device_Set_Object_Instance_Number() starting,\n");
+            fclose(fp_object_diagnotiscs);
+        }
+    }
+
+
+    if ( object_id <= BACNET_MAX_INSTANCE )
     {
         /* Make the change and update the database revision */
-printf("# seeting Object_Instance_Number to %d,\n", object_id);
+
+printf("# setting Object_Instance_Number to %d,\n", object_id);
         Object_Instance_Number = object_id;
+
 printf("# calling Device_Inc_Database_Revision() . . .\n");
         Device_Inc_Database_Revision();
-    } else
+    }
+    else
+    {
         status = false;
+    }
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "returning %d to calling code . . .", status);
+    show_diag(rname, lbuf, dflag_announce);
 
     return status;
+
 }
 
 

@@ -260,8 +260,9 @@ void dlenv_init( void)
 //    printf("\n#\n# dlenv_init():  * * *  PRE-DEBUGGING STATEMENT  * * *\n#\n");
 
     show_diag(rname, "starting,", dflag_announce);
+    show_diag(rname, "note 'dlenv' probably stands for \"Data Link Environment\",", dflag_verbose);
     show_diag(rname, "this routine dlenv() designed to configure Data Link network layer from available enrvironment variables,",
-      dflag_announce);
+      dflag_verbose);
 
 
 #if defined(BACDL_ALL)
