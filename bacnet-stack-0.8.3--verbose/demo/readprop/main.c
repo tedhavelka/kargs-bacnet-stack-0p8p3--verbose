@@ -186,6 +186,9 @@ void MyAbortHandler(
     }
 }
 
+
+
+
 void MyRejectHandler(
     BACNET_ADDRESS * src,
     uint8_t invoke_id,
@@ -199,6 +202,9 @@ void MyRejectHandler(
     }
 }
 
+
+
+
 /** Handler for a ReadProperty ACK.
  * @ingroup DSRP
  * Doesn't actually do anything, except, for debugging, to
@@ -211,23 +217,26 @@ void MyRejectHandler(
  *                          decoded from the APDU header of this message.
  */
 void My_Read_Property_Ack_Handler(
-    uint8_t * service_request,
-    uint16_t service_len,
-    BACNET_ADDRESS * src,
-    BACNET_CONFIRMED_SERVICE_ACK_DATA * service_data)
+  uint8_t * service_request,
+  uint16_t service_len,
+  BACNET_ADDRESS * src,
+  BACNET_CONFIRMED_SERVICE_ACK_DATA * service_data)
 {
     int len = 0;
     BACNET_READ_PROPERTY_DATA data;
 
-    if (address_match(&Target_Address, src) &&
-        (service_data->invoke_id == Request_Invoke_ID)) {
-        len =
-            rp_ack_decode_service_request(service_request, service_len, &data);
-        if (len > 0) {
+    if (address_match(&Target_Address, src) && (service_data->invoke_id == Request_Invoke_ID))
+    {
+        len = rp_ack_decode_service_request(service_request, service_len, &data);
+
+        if (len > 0)
+        {
             rp_ack_print_data(&data);
         }
+
     }
-}
+
+} // end routine My_Read_Property_Ack_Handler()
 
 
 
@@ -304,7 +313,7 @@ int main(int argc, char *argv[])
     unsigned int dflag_verbose    = DIAGNOSTICS_ON;
 
     unsigned int dflag_parameter_parsing      = DIAGNOSTICS_ON;
-    unsigned int dflag_comms_loop             = DIAGNOSTICS_OFF;  // turned off 2017-03-22 by Ted,
+    unsigned int dflag_comms_loop             = DIAGNOSTICS_ON;  // turned off 2017-03-22 by Ted,
     unsigned int dflag_comms_loop_break       = DIAGNOSTICS_ON;
     unsigned int dflag_target_address_summary = DIAGNOSTICS_ON;
     unsigned int dflag_mark = DIAGNOSTICS_ON;
@@ -471,10 +480,35 @@ int main(int argc, char *argv[])
     /* try to bind with the device */
     show_diag(rname, "First time and above communications loop calling address_bind_request(),",
       dflag_verbose);
-    snprintf(lbuf, SIZE__DIAG_MESSAGE, "+  with parameters 'Target Device Object Instance' set to %d, address of 'max_apdu', address of 'Target_Address',",
-      Target_Device_Object_Instance);
-    show_diag(rname, lbuf, dflag_verbose);
-    show_diag(rname, "+  calling . . .", dflag_verbose);
+
+//    snprintf(lbuf, SIZE__DIAG_MESSAGE, "+  with parameters 'Target Device Object Instance' set to %d, address of 'max_apdu', address of 'Target_Address',",
+//      Target_Device_Object_Instance);
+//    show_diag(rname, lbuf, dflag_verbose);
+//    show_diag(rname, "+  calling . . .", dflag_verbose);
+
+    {
+            show_diag(rname, "about to call routine address_bind_request() with parameters and values:", dflag_verbose);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "static global variable Target_Device_Object_Instance = %u,", Target_Device_Object_Instance);
+            show_diag(rname, lbuf, dflag_verbose);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "local variable max_apdu = %u,", max_apdu);
+            show_diag(rname, lbuf, dflag_verbose);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "static global struct BACnet_Device_Address Target_Address with data members:");
+            show_diag(rname, lbuf, dflag_verbose);
+
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.mac_len = %u", Target_Address.mac_len);
+            show_diag(rname, lbuf, dflag_verbose);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.mac[%u]", MAX_MAC_LEN);
+            show_diag(rname, lbuf, dflag_verbose);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.net = %u", Target_Address.net);
+            show_diag(rname, lbuf, dflag_verbose);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.len = %u", Target_Address.len);
+            show_diag(rname, lbuf, dflag_verbose);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.adr[%u]", MAX_MAC_LEN);
+            show_diag(rname, lbuf, dflag_verbose);
+
+            show_diag(rname, "calling address_bind_request() . . .", dflag_verbose);
+    }
+
 
     found = address_bind_request(Target_Device_Object_Instance, &max_apdu, &Target_Address);
 
@@ -544,51 +578,31 @@ int main(int argc, char *argv[])
         /* wait until the device is bound, or timeout and quit */
         if (!found)
         {
-            snprintf(lbuf, SIZE__DIAG_MESSAGE, "trying to bind to device with Target Device Object Instance value = %u,",
-              Target_Device_Object_Instance);
+//            snprintf(lbuf, SIZE__DIAG_MESSAGE, "trying to bind to device with Target Device Object Instance value = %u,",
+//              Target_Device_Object_Instance);
+//            show_diag(rname, lbuf, dflag_comms_loop);
+
+            show_diag(rname, "about to call routine address_bind_request() with parameters and values:", dflag_comms_loop);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "static global variable Target_Device_Object_Instance = %u,", Target_Device_Object_Instance);
             show_diag(rname, lbuf, dflag_comms_loop);
-            snprintf(lbuf, SIZE__DIAG_MESSAGE, "and max_adpu value = %u,", max_apdu);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "local variable max_apdu = %u,", max_apdu);
             show_diag(rname, lbuf, dflag_comms_loop);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "static global struct BACnet_Device_Address Target_Address with data members:");
+            show_diag(rname, lbuf, dflag_comms_loop);
+
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.mac_len = %u", Target_Address.mac_len);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.mac[%u]", MAX_MAC_LEN);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.net = %u", Target_Address.net);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.len = %u", Target_Address.len);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.adr[%u]", MAX_MAC_LEN);
+
+            show_diag(rname, "calling address_bind_request() . . .", dflag_comms_loop);
 
             found = address_bind_request(Target_Device_Object_Instance, &max_apdu, &Target_Address);
         }
 
 
 
-
-
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
-// 2017-03-20 MON - Ted trying something to see what happens in spite of  failed address binding:
-
-/*
-        if (0)
-        {
-            if (Request_Invoke_ID == 0)
-            {
-                show_diag(rname, "- MARK 1 - calling routine Send_Read_Property_Request() . . .", dflag_mark);
-                Request_Invoke_ID =
-                    Send_Read_Property_Request(Target_Device_Object_Instance,
-                    Target_Object_Type, Target_Object_Instance,
-                    Target_Object_Property, Target_Object_Index);
-            }
-            else if (tsm_invoke_id_free(Request_Invoke_ID))
-            {
-                show_diag(rname, "- MARK 2 -", dflag_mark);
-                break;
-            }
-            else if (tsm_invoke_id_failed(Request_Invoke_ID))
-            {
-                show_diag(rname, "- MARK 3 -", dflag_mark);
-                fprintf(stderr, "\rError: TSM Timeout!\r\n");
-                tsm_free_invoke_id(Request_Invoke_ID);
-                Error_Detected = true;
-//                / *   try again or abort?   * /
-                break;
-            }
-        }
-*/
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 
 
 
@@ -599,11 +613,26 @@ int main(int argc, char *argv[])
         if (found)
 //        if ( 1 )
         {
-show_diag(rname, "- MARK 4 - entering 'if found' block unconditionally . . .", dflag_mark);
+// show_diag(rname, "- MARK 4 - entering 'if found' block unconditionally . . .", dflag_mark);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 4 - routine address_bind_request() returns 'true', target device %u found,",
+              Target_Device_Object_Instance);
+            show_diag(rname, lbuf, dflag_mark);
 
             if (Request_Invoke_ID == 0)
             {
-show_diag(rname, "- MARK 5 - calling routine Request_Invoke_ID() . . .", dflag_mark);
+                show_diag(rname, "- MARK 5 - calling routine Send_Read_Property_Request() with parameters and values:", dflag_mark);
+
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Device_Object_Instance = %u", Target_Device_Object_Instance);
+                show_diag(rname, lbuf, dflag_verbose);
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Object_Type = %u", Target_Object_Type);
+                show_diag(rname, lbuf, dflag_verbose);
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Object_Instance = %u", Target_Object_Instance);
+                show_diag(rname, lbuf, dflag_verbose);
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Object_Property = %u", Target_Object_Property);
+                show_diag(rname, lbuf, dflag_verbose);
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Object_Index = %u", Target_Object_Index);
+                show_diag(rname, lbuf, dflag_verbose);
+
                 Request_Invoke_ID =
                     Send_Read_Property_Request(Target_Device_Object_Instance,
                     Target_Object_Type, Target_Object_Instance,

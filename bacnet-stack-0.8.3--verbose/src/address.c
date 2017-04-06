@@ -691,9 +691,18 @@ bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRES
                 }
 
             }
+            else
+            {
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "pMatch->Flags holds %u and BAC_ADDR_BIND_REQ = %u, BAC_ADDR_BIND_REQ bit not set,",
+                  pMatch->Flags, BAC_ADDR_BIND_REQ);
+                show_diag(rname, lbuf, dflag_verbose);
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "leaving return value set to %u,", found);
+                show_diag(rname, lbuf, dflag_verbose);
+            }
 
 // 2017-03-30 -
-            show_diag(rname, "returning 'true' to calling code . . .", dflag_announce);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "returning value of variable found = %u to calling code . . .", found);
+            show_diag(rname, lbuf, dflag_announce);
             show_diag(rname, ".", dflag_announce);
 
             return (found);     /* True if bound, false if bind request outstanding */
