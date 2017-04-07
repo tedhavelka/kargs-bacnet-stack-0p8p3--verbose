@@ -722,10 +722,14 @@ bool dlmstp_init(char *ifname)
 //    DIAG__SET_ROUTINE_NAME("dlmstp_init");
 
 
+    printf("\n# %s/dlmstp_init():  starting,\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
+
     /* initialize PDU queue */
+    printf("\n# %s/dlmstp_init():  calling routine Ringbuf_Init() . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     Ringbuf_Init(&PDU_Queue, (uint8_t *) & PDU_Buffer, sizeof(struct mstp_pdu_packet), MSTP_PDU_PACKET_COUNT);
 
     /* initialize packet queue */
+    printf("\n# %s/dlmstp_init():  initializing receive packet data structure . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     Receive_Packet.ready = false;
     Receive_Packet.pdu_len = 0;
     rv = pthread_cond_init(&Receive_Packet_Flag, NULL);
@@ -734,6 +738,8 @@ bool dlmstp_init(char *ifname)
         fprintf(stderr,
             "MS/TP Interface: %s\n cannot allocate PThread Condition.\n",
             ifname);
+        printf("\n# %s/dlmstp_init():  WARNING - can't allocate pthread condition!\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
+        printf("\n# %s/dlmstp_init():  calling exit() with value (1) . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
         exit(1);
     }
 
@@ -743,6 +749,8 @@ bool dlmstp_init(char *ifname)
     {
         fprintf(stderr,
             "MS/TP Interface: %s\n cannot allocate PThread Mutex.\n", ifname);
+        printf("\n# %s/dlmstp_init():  WARNING - can't allocate pthread mutex!\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
+        printf("\n# %s/dlmstp_init():  calling exit() with value (1) . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
         exit(1);
     }
 
@@ -758,35 +766,35 @@ bool dlmstp_init(char *ifname)
     }
     else
     {
-        printf("# %s/dlmtp_init():  variable 'ifname' not defined early on while this routine initializing hardware,\n",
+        printf("# %s/dlmstp_init():  variable 'ifname' not defined early on while this routine initializing hardware,\n",
           SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     }
 
 
 
-    printf("# %s/dlmtp_init():  calling routine to initialize RS-485 . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
+    printf("# %s/dlmstp_init():  calling routine to initialize RS-485 . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     RS485_Initialize();
 
-    printf("# %s/dlmtp_init():  zeroing MSTP port input and output buffers, setting their sizes . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
+    printf("# %s/dlmstp_init():  zeroing MSTP port input and output buffers, setting their sizes . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     MSTP_Port.InputBuffer = &RxBuffer[0];
     MSTP_Port.InputBufferSize = sizeof(RxBuffer);
     MSTP_Port.OutputBuffer = &TxBuffer[0];
     MSTP_Port.OutputBufferSize = sizeof(TxBuffer);
 
-    printf("# %s/dlmtp_init():  getting time of day . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
+    printf("# %s/dlmstp_init():  getting time of day . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     gettimeofday(&start, NULL);
 
-    printf("# %s/dlmtp_init():  setting values of the 'Silence' timer . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
+    printf("# %s/dlmstp_init():  setting values of the 'Silence' timer . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     MSTP_Port.SilenceTimer = Timer_Silence;
     MSTP_Port.SilenceTimerReset = Timer_Silence_Reset;
 
-    printf("# %s/dlmtp_init():  calling routine MSTP_Init(&MSTP_Port) . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
+    printf("# %s/dlmstp_init():  calling routine MSTP_Init(&MSTP_Port) . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     MSTP_Init(&MSTP_Port);
 
 
 
 #if PRINT_ENABLED
-    printf("# %s/dlmtp_init():  following three lines regarding interface from %s/dlmstp.c:\n",
+    printf("# %s/dlmstp_init():  following three lines regarding interface from %s/dlmstp.c:\n",
       SOURCE_FILE_IDENTIFIER__2017_INQUIRY, SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     fprintf(stderr, "MS/TP MAC: %02X\n", MSTP_Port.This_Station);
     fprintf(stderr, "MS/TP Max_Master: %02X\n", MSTP_Port.Nmax_master);

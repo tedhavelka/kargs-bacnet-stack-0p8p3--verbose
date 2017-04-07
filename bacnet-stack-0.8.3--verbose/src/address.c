@@ -624,8 +624,8 @@ bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRES
         }
         else
         {
-            dflag_announce = DIAGNOSTICS_OFF;
-            dflag_verbose = DIAGNOSTICS_OFF;
+//            dflag_announce = DIAGNOSTICS_OFF;
+//            dflag_verbose = DIAGNOSTICS_OFF;
         }
 
         ++routine_calls;
@@ -703,7 +703,7 @@ bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRES
 // 2017-03-30 -
             snprintf(lbuf, SIZE__DIAG_MESSAGE, "returning value of variable found = %u to calling code . . .", found);
             show_diag(rname, lbuf, dflag_announce);
-            show_diag(rname, ".", dflag_announce);
+            show_diag(rname, "", dflag_announce);
 
             return (found);     /* True if bound, false if bind request outstanding */
 
@@ -738,7 +738,7 @@ bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRES
 
 
     /* No free entries, See if we can squeeze it in by dropping an existing one */
-    show_diag(rname, "calling routine in attempt to remove oldest bound device entry . . .",
+    show_diag(rname, "calling routine address_remove_oldest() in attempt to remove oldest bound device entry . . .",
       dflag_verbose);
     pMatch = address_remove_oldest();
 
@@ -754,7 +754,7 @@ bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRES
     show_diag(rname, "reached end of this routine, no match found and no free device table entries freed,",
       dflag_verbose);
     show_diag(rname, "returning 'false' to calling code . . .", dflag_announce);
-    show_diag(rname, ".", dflag_announce);
+    show_diag(rname, "", dflag_announce);
 
     return (false);
 

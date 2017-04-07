@@ -281,7 +281,7 @@ static void Init_Service_Handlers(void)
 
 
 
-int main(int argc, char *argv[])
+int main(int argc, char *argv[])    // Steve Kargs' demo program `bacrp`
 {
 
     BACNET_ADDRESS src = {
@@ -591,10 +591,36 @@ int main(int argc, char *argv[])
             show_diag(rname, lbuf, dflag_comms_loop);
 
             snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.mac_len = %u", Target_Address.mac_len);
+            show_diag(rname, lbuf, dflag_comms_loop);
             snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.mac[%u]", MAX_MAC_LEN);
+
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "    Target_Address.mac = %03d %03d %03d %03d  %03d %03d %03d",
+              Target_Address.mac[0],
+              Target_Address.mac[1],
+              Target_Address.mac[2],
+              Target_Address.mac[3],
+              Target_Address.mac[4],
+              Target_Address.mac[5],
+              Target_Address.mac[6]);
+            show_diag(rname, lbuf, dflag_verbose);
+
+            show_diag(rname, lbuf, dflag_comms_loop);
             snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.net = %u", Target_Address.net);
+            show_diag(rname, lbuf, dflag_comms_loop);
             snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.len = %u", Target_Address.len);
+            show_diag(rname, lbuf, dflag_comms_loop);
             snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Address.adr[%u]", MAX_MAC_LEN);
+            show_diag(rname, lbuf, dflag_comms_loop);
+
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "    Target_Address.adr = %03d %03d %03d %03d  %03d %03d %03d",
+              Target_Address.adr[0],
+              Target_Address.adr[1],
+              Target_Address.adr[2],
+              Target_Address.adr[3],
+              Target_Address.adr[4],
+              Target_Address.adr[5],
+              Target_Address.adr[6]);
+            show_diag(rname, lbuf, dflag_verbose);
 
             show_diag(rname, "calling address_bind_request() . . .", dflag_comms_loop);
 
@@ -620,7 +646,7 @@ int main(int argc, char *argv[])
 
             if (Request_Invoke_ID == 0)
             {
-                show_diag(rname, "- MARK 5 - calling routine Send_Read_Property_Request() with parameters and values:", dflag_mark);
+                show_diag(rname, "- MARK 5 - about to call routine Send_Read_Property_Request() with parameters and values:", dflag_mark);
 
                 snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Device_Object_Instance = %u", Target_Device_Object_Instance);
                 show_diag(rname, lbuf, dflag_verbose);
@@ -633,33 +659,33 @@ int main(int argc, char *argv[])
                 snprintf(lbuf, SIZE__DIAG_MESSAGE, "  Target_Object_Index = %u", Target_Object_Index);
                 show_diag(rname, lbuf, dflag_verbose);
 
+                show_diag(rname, "calling routine Send_Read_Property_Request() . . .", dflag_verbose);
                 Request_Invoke_ID =
                     Send_Read_Property_Request(Target_Device_Object_Instance,
                     Target_Object_Type, Target_Object_Instance,
                     Target_Object_Property, Target_Object_Index);
+                show_diag(rname, "back from routine Send_Read_Property_Request(),", dflag_verbose);
             }
             else if (tsm_invoke_id_free(Request_Invoke_ID))
             {
-snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 6 PRE - Request_Invoke_ID = %u,", Request_Invoke_ID); 
-show_diag(rname, lbuf, dflag_mark);
-
-snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 6 PRE - calling tsm_invoke_id_free() with value of %u returns 'true',", Request_Invoke_ID);
-show_diag(rname, lbuf, dflag_mark);
-
-show_diag(rname, "- MARK 6 - therefore breaking out of bacrp main communications loop . . .", dflag_mark);
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 6 PRE - Request_Invoke_ID = %u,", Request_Invoke_ID); 
+                show_diag(rname, lbuf, dflag_mark);
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 6 PRE - calling tsm_invoke_id_free() with value of %u returns 'true',", Request_Invoke_ID);
+                show_diag(rname, lbuf, dflag_mark);
+                show_diag(rname, "- MARK 6 - therefore breaking out of bacrp main communications loop . . .", dflag_mark);
                 break;
             }
             else if (tsm_invoke_id_failed(Request_Invoke_ID))
             {
-snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 7 PRE - calling tsm_invoke_id_failed() with value %u,", Request_Invoke_ID); 
-show_diag(rname, lbuf, dflag_mark);
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "- MARK 7 PRE - calling tsm_invoke_id_failed() with value %u,", Request_Invoke_ID); 
+                show_diag(rname, lbuf, dflag_mark);
 
                 fprintf(stderr, "\rError: TSM Timeout!\r\n");
                 tsm_free_invoke_id(Request_Invoke_ID);
                 Error_Detected = true;
 
                 /* try again or abort? */
-show_diag(rname, "- MARK 7 - therefore breaking out of bacrp main communications loop . . .", dflag_mark);
+                show_diag(rname, "- MARK 7 - therefore breaking out of bacrp main communications loop . . .", dflag_mark);
                 break;
             }
         }
