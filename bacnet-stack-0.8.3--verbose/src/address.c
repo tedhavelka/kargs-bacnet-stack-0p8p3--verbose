@@ -586,6 +586,7 @@ bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRES
     unsigned int dflag_announce = DIAGNOSTICS_ON;
     unsigned int dflag_verbose = DIAGNOSTICS_ON;
     unsigned int dflag_routine_calls = DIAGNOSTICS_ON;
+    unsigned int dflag__show_routine_call_every_n_calls = DIAGNOSTICS_ON;
 
 // 2017-03-30 - this routine called frequently and rapidly, so Ted adding these:
 
@@ -605,9 +606,21 @@ bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRES
 
 
 
+    show_diag(rname, "starting,", dflag_announce);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "caller sends BACnet device id = %u,", device_id);
+    show_diag(rname, lbuf, dflag_verbose);
+
+
 // 2017-03-30 - this routine called frequently and rapidly, so Ted adding routine count tracking:
 
-    if ( 1 )
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//  The following diagnostics block prints routine call count on first
+//  call, and successively on every 'mark_routine_every_n_calls' calls.
+//  A shorter diagnostic block just after shows routine call count with
+//  every call to this routine.
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+    if ( dflag__show_routine_call_every_n_calls )
     {
         if ( routine_calls == 0 )
         {
@@ -638,11 +651,13 @@ bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRES
     }
 
 
+// Shorter block to show call count of this routine with every call:
 
+    {
+        snprintf(lbuf, SIZE__DIAG_MESSAGE, "called %u times,", ((routine_calls_multiple * mark_routine_every_n_calls) + routine_calls));
+        show_diag(rname, lbuf, dflag_verbose);
+    }
 
-    show_diag(rname, "starting,", dflag_announce);
-    snprintf(lbuf, SIZE__DIAG_MESSAGE, "caller sends BACnet device id = %u,", device_id);
-    show_diag(rname, lbuf, dflag_verbose);
 
 
     /* existing device - update address info if currently bound */

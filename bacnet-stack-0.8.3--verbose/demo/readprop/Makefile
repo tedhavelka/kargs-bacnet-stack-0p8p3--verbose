@@ -31,7 +31,7 @@ all: ${BACNET_LIB_TARGET} Makefile ${TARGET_BIN}
 
 ${TARGET_BIN}: ${OBJS} Makefile ${BACNET_LIB_TARGET}
 #	${CC} ${PFLAGS} ${OBJS} ${LFLAGS} -o $@
-	@printf "# Compiling and linking with variable $${LDFLAGS} set to '${LDFLAGS}',\n"
+	@printf "# Compiling and linking with variable LDFLAGS set to '${LDFLAGS}',\n"
 #	${CC} ${PFLAGS} ${OBJS} ${LFLAGS} -L/usr/local/lib/libtestlib-0p1 -ltestlib-0p1 -o $@
 	${CC} ${PFLAGS} ${OBJS} ${LFLAGS} ${LFLAGS_ADDED_BY_TED} -o $@
 	size $@

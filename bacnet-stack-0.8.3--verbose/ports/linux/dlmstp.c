@@ -55,7 +55,7 @@
 //  exported environment variable . . . Ted to investigate this
 //  issue later:
 
-// #include <diagnostics.h>
+#include <diagnostics.h>
 
 
 
@@ -216,6 +216,15 @@ uint16_t dlmstp_receive(
 
     (void) max_pdu;
 
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("dlmstp_receive()");
+
+
+    show_diag(rname, "starting,", dflag_verbose);
+
     /* see if there is a packet available, and a place
        to put the reply (if necessary) and process it */
     pthread_mutex_lock(&Receive_Packet_Mutex);
@@ -223,29 +232,40 @@ uint16_t dlmstp_receive(
     pthread_cond_timedwait(&Receive_Packet_Flag, &Receive_Packet_Mutex,
         &abstime);
 
+    show_diag(rname, "checking whether Receive_Packet.ready is true,", dflag_verbose);
     if (Receive_Packet.ready)
     {
+        show_diag(rname, "checking whether Receive_Packet.pud_len is not zero,", dflag_verbose);
         if (Receive_Packet.pdu_len)
         {
+            show_diag(rname, "incrementing global variable MSTP_Packets,", dflag_verbose);
             MSTP_Packets++;
+
+            show_diag(rname, "checking if 'src' true,", dflag_verbose);
             if (src)
             {
+                show_diag(rname, "'src' passed by reference and not null, copying to 'src' receive packet address . . .", dflag_verbose);
                 memmove(src, &Receive_Packet.address, sizeof(Receive_Packet.address));
             }
 
+            show_diag(rname, "checking if 'pdu' true,", dflag_verbose);
             if (pdu)
             {
+                show_diag(rname, "'pdu' passed by reference and not null, copying to 'pdu' receive packet PDU bytes . . .", dflag_verbose);
                 memmove(pdu, &Receive_Packet.pdu, sizeof(Receive_Packet.pdu));
             }
 
             pdu_len = Receive_Packet.pdu_len;
         }
 
+        show_diag(rname, "setting Receive_Packet.ready to 'false',", dflag_verbose);
         Receive_Packet.ready = false;
     }
 
     pthread_mutex_unlock(&Receive_Packet_Mutex);
 
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "returning pdu_len = %d to caller . . .", pdu_len);
+    show_diag(rname, lbuf, dflag_verbose);
     return pdu_len;
 }
 
@@ -327,16 +347,24 @@ void dlmstp_fill_bacnet_address(
     }
 }
 
+
+
+
 /* for the MS/TP state machine to use for putting received data */
+
 uint16_t MSTP_Put_Receive(
     volatile struct mstp_port_struct_t *mstp_port)
 {
     uint16_t pdu_len = 0;
 
     pthread_mutex_lock(&Receive_Packet_Mutex);
-    if (Receive_Packet.ready) {
+
+    if (Receive_Packet.ready)
+    {
         debug_printf("MS/TP: Dropped! Not Ready.\n");
-    } else {
+    }
+    else
+    {
         /* bounds check - maybe this should send an abort? */
         pdu_len = mstp_port->DataLength;
         if (pdu_len > sizeof(Receive_Packet.pdu)) {
@@ -353,13 +381,18 @@ uint16_t MSTP_Put_Receive(
         Receive_Packet.ready = true;
         pthread_cond_signal(&Receive_Packet_Flag);
     }
+
     pthread_mutex_unlock(&Receive_Packet_Mutex);
 
     return pdu_len;
 }
 
+
+
+
 /* for the MS/TP state machine to use for getting data to send */
 /* Return: amount of PDU data */
+
 uint16_t MSTP_Get_Send(
     volatile struct mstp_port_struct_t * mstp_port,
     unsigned timeout)
@@ -759,7 +792,7 @@ bool dlmstp_init(char *ifname)
     {
         RS485_Set_Interface(ifname);
 #if PRINT_ENABLED
-        printf("\n# %s/dlmstp_init():  following line regarding interface from %s/dlmstp.c:\n",
+        printf("\n# %s, dlmstp_init():  following line regarding interface from %s:\n",
           SOURCE_FILE_IDENTIFIER__2017_INQUIRY, SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
         fprintf(stderr, "MS/TP Interface: %s\n", ifname);
 #endif

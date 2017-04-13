@@ -47,6 +47,13 @@
 #include "address.h"
 #include "bacaddr.h"
 
+
+
+// 2017-04-13 - added by Ted:
+#include <diagnostics.h>
+
+
+
 /** @file tsm.c  BACnet Transaction State Machine operations  */
 
 #if (MAX_TSM_TRANSACTIONS)
@@ -295,6 +302,10 @@ void tsm_free_invoke_id(
     }
 }
 
+
+
+
+
 /** Check if the invoke ID has been made free by the Transaction State Machine.
  * @param invokeID [in] The invokeID to be checked, normally of last message sent.
  * @return True if it is free (done with), False if still pending in the TSM.
@@ -305,12 +316,27 @@ bool tsm_invoke_id_free(
     bool status = true;
     uint8_t index;
 
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("tsm_invoke_id_free()");
+
+
+    show_diag(rname, "starting,", dflag_verbose);
+
     index = tsm_find_invokeID_index(invokeID);
     if (index < MAX_TSM_TRANSACTIONS)
         status = false;
 
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "returning status = %d to caller . . .", status);
+    show_diag(rname, lbuf, dflag_verbose);
+
     return status;
 }
+
+
+
 
 /** See if we failed get a confirmation for the message associated
  *  with this invoke ID.
@@ -318,11 +344,20 @@ bool tsm_invoke_id_free(
  * @return True if already failed, False if done or segmented or still waiting
  *         for a confirmation.
  */
+
 bool tsm_invoke_id_failed(
     uint8_t invokeID)
 {
     bool status = false;
     uint8_t index;
+
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    DIAG__SET_ROUTINE_NAME("tsm_invoke_id_failed()");
+
+//    printf("%s:  starting,", rname);
+    show_diag(rname, "starting,", dflag_verbose);
 
     index = tsm_find_invokeID_index(invokeID);
     if (index < MAX_TSM_TRANSACTIONS) {
@@ -332,8 +367,13 @@ bool tsm_invoke_id_failed(
             status = true;
     }
 
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "returning status = %d to caller . . .", status);
+    show_diag(rname, lbuf, dflag_verbose);
+
     return status;
 }
+
+
 
 
 #ifdef TEST

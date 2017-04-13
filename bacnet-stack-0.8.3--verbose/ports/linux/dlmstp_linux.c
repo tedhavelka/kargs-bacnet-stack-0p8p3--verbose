@@ -41,6 +41,10 @@
 #include "net.h"
 #include "ringbuf.h"
 
+
+
+
+
 /** @file linux/dlmstp.c  Provides Linux-specific DataLink functions for MS/TP. */
 
 #define BACNET_PDU_CONTROL_BYTE_OFFSET 1
@@ -168,41 +172,87 @@ int dlmstp_send_pdu(
     return bytes_sent;
 }
 
+
+
+
+uint16_t routine_zztop(void)  // 2017-04-11 - Test of Ted's to see whether this source file compiled into `bacrp` and others - TMH
+{
+    return 0;
+}
+
+
+
 uint16_t dlmstp_receive(
-    void *poPort,
-    BACNET_ADDRESS * src,       /* source address */
-    uint8_t * pdu,      /* PDU data */
-    uint16_t max_pdu,   /* amount of space available in the PDU  */
-    unsigned timeout)
-{       /* milliseconds to wait for a packet */
+  void *poPort,
+  BACNET_ADDRESS * src,   /* source address */
+  uint8_t * pdu,          /* PDU data */
+  uint16_t max_pdu,       /* amount of space available in the PDU  */
+  unsigned timeout)       /* milliseconds to wait for a packet */
+{
+
     uint16_t pdu_len = 0;
     struct timespec abstime;
     int rv = 0;
     SHARED_MSTP_DATA *poSharedData;
-    struct mstp_port_struct_t *mstp_port =
-        (struct mstp_port_struct_t *) poPort;
-    if (!mstp_port) {
+    struct mstp_port_struct_t *mstp_port = (struct mstp_port_struct_t *) poPort;
+
+
+    unsigned int dflag_announce   = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose    = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("dlmstp_linux.c dlmstp_receive");
+
+
+
+    show_diag(rname, "starting,", dflag_announce);
+    printf("zztop dlmstp_receive():  starting,\n";
+
+    if (!mstp_port)
+    {
+        show_diag(rname, "local pointer mstp_port* -> passed poPort appears null!", dflag_announce);
+        show_diag(rname, "therefore returning zero (0) to caller . . .", dflag_announce);
         return 0;
     }
+
     poSharedData = (SHARED_MSTP_DATA *) mstp_port->UserData;
-    if (!poSharedData) {
+
+    if (!poSharedData)
+    {
+        show_diag(rname, "local pointer poSharedData* -> mstp_port->UserData appears null!", dflag_announce);
+        show_diag(rname, "therefore returning zero (0) to caller . . .", dflag_announce);
         return 0;
     }
+
+
     (void) max_pdu;
+
     /* see if there is a packet available, and a place
        to put the reply (if necessary) and process it */
     get_abstime(&abstime, timeout);
-    rv = pthread_cond_timedwait(&poSharedData->Receive_Packet_Flag,
-        &poSharedData->Receive_Packet_Mutex, &abstime);
-    if (rv == 0) {
-        if (poSharedData->Receive_Packet.ready) {
-            if (poSharedData->Receive_Packet.pdu_len) {
+
+    rv = pthread_cond_timedwait(&poSharedData->Receive_Packet_Flag, &poSharedData->Receive_Packet_Mutex, &abstime);
+
+    show_diag(rname, "CHECKING - checking that pthread_cond_timedwait(...) returns zero,", dflag_verbose);
+    if (rv == 0)
+    {
+        show_diag(rname, "CHECKING - checking that poSharedData->Receive_Packet.ready is true,", dflag_verbose);
+        if (poSharedData->Receive_Packet.ready)
+        {
+            show_diag(rname, "CHECKING - checking that poSharedData->Receive_Packet.pdu_len is not zero,", dflag_verbose);
+            if (poSharedData->Receive_Packet.pdu_len)
+            {
                 poSharedData->MSTP_Packets++;
-                if (src) {
+
+                show_diag(rname, "CHECKING - checking that passed BACnet address 'src' is true,", dflag_verbose);
+                if (src)
+                {
                     memmove(src, &poSharedData->Receive_Packet.address,
                         sizeof(poSharedData->Receive_Packet.address));
                 }
-                if (pdu) {
+
+                show_diag(rname, "CHECKING - checking that passed data pointer 'pdu' is not null,", dflag_verbose);
+                if (pdu)
+                {
                     memmove(pdu, &poSharedData->Receive_Packet.pdu,
                         sizeof(poSharedData->Receive_Packet.pdu));
                 }
@@ -210,9 +260,14 @@ uint16_t dlmstp_receive(
             }
             poSharedData->Receive_Packet.ready = false;
         }
+
     }
 
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "returning pdu_len equal to %u . . .", pdu_len);
+    show_diag(rname, lbuf, dflag_announce);
     return pdu_len;
+
 }
 
 void *dlmstp_receive_fsm_task(

@@ -43,6 +43,14 @@
 #include "txbuf.h"
 #include "client.h"
 
+
+
+// 2017-04-13 - added by Ted:
+#include <diagnostics.h>
+
+
+
+
 /** @file s_rp.c  Send Read Property request. */
 
 /** Sends a Read Property request
@@ -95,16 +103,18 @@ uint8_t Send_Read_Property_Request_Address(
         data.object_instance = object_instance;
         data.object_property = object_property;
         data.array_index = array_index;
-        len =
-            rp_encode_apdu(&Handler_Transmit_Buffer[pdu_len], invoke_id,
-            &data);
+
+        len = rp_encode_apdu(&Handler_Transmit_Buffer[pdu_len], invoke_id, &data);
+
         pdu_len += len;
+
         /* will it fit in the sender?
            note: if there is a bottleneck router in between
            us and the destination, we won't know unless
            we have a way to check for that and update the
            max_apdu in the address binding table. */
-        if ((uint16_t) pdu_len < max_apdu) {
+        if ((uint16_t) pdu_len < max_apdu)
+        {
             tsm_set_confirmed_unsegmented_transaction(invoke_id, dest,
                 &npdu_data, &Handler_Transmit_Buffer[0], (uint16_t) pdu_len);
             bytes_sent =
@@ -115,7 +125,9 @@ uint8_t Send_Read_Property_Request_Address(
                 fprintf(stderr, "Failed to Send ReadProperty Request (%s)!\n",
                     strerror(errno));
 #endif
-        } else {
+        }
+        else
+        {
             tsm_free_invoke_id(invoke_id);
             invoke_id = 0;
 #if PRINT_ENABLED
@@ -128,6 +140,9 @@ uint8_t Send_Read_Property_Request_Address(
 
     return invoke_id;
 }
+
+
+
 
 /** Sends a Read Property request.
  * @ingroup DSRP
@@ -142,6 +157,7 @@ uint8_t Send_Read_Property_Request_Address(
  *   - BACNET_ARRAY_ALL (~0) for the full array to be read.
  * @return invoke id of outgoing message, or 0 if device is not bound or no tsm available
  */
+
 uint8_t Send_Read_Property_Request(
     uint32_t device_id, /* destination device */
     BACNET_OBJECT_TYPE object_type,
@@ -154,6 +170,14 @@ uint8_t Send_Read_Property_Request(
     uint8_t invoke_id = 0;
     bool status = false;
 
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    DIAG__SET_ROUTINE_NAME("Send_Read_Property_Request()");
+
+
+    show_diag(rname, "starting,", dflag_verbose);
+
     /* is the device bound? */
     status = address_get_by_device(device_id, &max_apdu, &dest);
     if (status) {
@@ -164,3 +188,9 @@ uint8_t Send_Read_Property_Request(
 
     return invoke_id;
 }
+
+
+
+
+
+// --- EOF ---
