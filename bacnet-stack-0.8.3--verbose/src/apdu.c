@@ -43,6 +43,13 @@
 #include "dcc.h"
 #include "iam.h"
 
+
+
+// 2017-04-17 - Added by Ted, provides local diagnostics:
+#include <diagnostics.h>
+
+
+
 /** @file apdu.c  Handles APDU services */
 
 extern int Routed_Device_Service_Approval(
@@ -264,11 +271,33 @@ void apdu_set_confirmed_simple_ack_handler(
     }
 }
 
+
+
+
 void apdu_set_confirmed_ack_handler(
     BACNET_CONFIRMED_SERVICE service_choice,
     confirmed_ack_function pFunction)
 {
-    switch (service_choice) {
+
+// diagnostics:
+
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+    unsigned int dflag_announce   = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose    = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("apdu_set_confirmed_ack_handler");
+
+
+    show_diag(rname, "starting,", dflag_announce);
+
+    show_diag(rname, "called with parameters named service_choice and pFunction,", dflag_verbose);
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "about to switch on service_choice which holds %d,", service_choice);
+    show_diag(rname, lbuf, dflag_verbose);
+
+    switch (service_choice)
+    {
         case SERVICE_CONFIRMED_GET_ALARM_SUMMARY:
         case SERVICE_CONFIRMED_GET_ENROLLMENT_SUMMARY:
         case SERVICE_CONFIRMED_GET_EVENT_INFORMATION:
@@ -288,12 +317,22 @@ void apdu_set_confirmed_ack_handler(
         case SERVICE_CONFIRMED_VT_DATA:
             /* Security Services */
         case SERVICE_CONFIRMED_AUTHENTICATE:
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "setting Confirmed_ACK_Function[%d] to function pointer holding memory address %lu,",
+              service_choice, (unsigned long int)pFunction);
+            show_diag(rname, lbuf, dflag_verbose);
             Confirmed_ACK_Function[service_choice] = pFunction;
             break;
+
         default:
             break;
     }
+
+    show_diag(rname, "returning to calling code . . .", dflag_announce);
+
 }
+
+
+
 
 static error_function Error_Function[MAX_BACNET_CONFIRMED_SERVICE];
 
@@ -430,6 +469,10 @@ static bool apdu_unconfirmed_dcc_disabled(
     return status;
 }
 
+
+
+
+
 /** Process the APDU header and invoke the appropriate service handler
  * to manage the received request.
  * Almost all requests and ACKs invoke this function.
@@ -458,10 +501,31 @@ void apdu_handler(
     uint8_t reason = 0;
     bool server = false;
 
-    if (apdu) {
-        /* PDU Type */
-        switch (apdu[0] & 0xF0) {
+// diagnostics:
+
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+    unsigned int dflag_announce   = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose    = DIAGNOSTICS_ON;
+
+//    DIAG__SET_ROUTINE_NAME("~src/apdu.c apdu_handler");
+    DIAG__SET_ROUTINE_NAME("apdu_handler");
+
+
+    show_diag(rname, "starting,", dflag_announce);
+    show_diag(rname, "Note:  this is the routine defined in source file ~0.8.3/src/apdu.c,", dflag_verbose);
+
+    show_diag(rname, "checking whether apdu not zero or not null,", dflag_verbose);
+    if (apdu)
+    {
+        snprintf(lbuf, SIZE__DIAG_MESSAGE, "about to switch on (apdu[0] & 0xF0) which equals %d,", (apdu[0] & 0xF0));
+        show_diag(rname, lbuf, dflag_verbose);
+
+//      / * PDU Type * /
+        switch (apdu[0] & 0xF0)
+        {
             case PDU_TYPE_CONFIRMED_SERVICE_REQUEST:
+                show_diag(rname, "handling case PDU_TYPE_CONFIRMED_SERVICE_REQUEST,", dflag_verbose);
                 len =
                     (int) apdu_decode_confirmed_service_request(&apdu[0],
                     apdu_len, &service_data, &service_choice, &service_request,
@@ -480,7 +544,10 @@ void apdu_handler(
                     Unrecognized_Service_Handler(service_request,
                         service_request_len, src, &service_data);
                 break;
+
+
             case PDU_TYPE_UNCONFIRMED_SERVICE_REQUEST:
+                show_diag(rname, "handling case PDU_TYPE_UNCONFIRMED_SERVICE_REQUEST,", dflag_verbose);
                 service_choice = apdu[1];
                 service_request = &apdu[2];
                 service_request_len = apdu_len - 2;
@@ -498,7 +565,10 @@ void apdu_handler(
                             service_request_len, src);
                 }
                 break;
+
+
             case PDU_TYPE_SIMPLE_ACK:
+                show_diag(rname, "handling case PDU_TYPE_SIMPLE_ACK,", dflag_verbose);
                 invoke_id = apdu[1];
                 service_choice = apdu[2];
                 switch (service_choice) {
@@ -533,21 +603,29 @@ void apdu_handler(
                         break;
                 }
                 break;
+
+
             case PDU_TYPE_COMPLEX_ACK:
+                show_diag(rname, "handling case PDU_TYPE_COMPLEX_ACK,", dflag_verbose);
+
                 service_ack_data.segmented_message =
                     (apdu[0] & BIT3) ? true : false;
                 service_ack_data.more_follows =
                     (apdu[0] & BIT2) ? true : false;
                 invoke_id = service_ack_data.invoke_id = apdu[1];
                 len = 2;
-                if (service_ack_data.segmented_message) {
+                if (service_ack_data.segmented_message)
+                {
                     service_ack_data.sequence_number = apdu[len++];
                     service_ack_data.proposed_window_number = apdu[len++];
                 }
                 service_choice = apdu[len++];
                 service_request = &apdu[len];
                 service_request_len = apdu_len - (uint16_t) len;
-                switch (service_choice) {
+
+                snprintf(lbuf, SIZE__DIAG_MESSAGE, "while processing PDU_TYPE_COMPLEX_ACK switching on var' service_choice = %d,", service_choice);
+                switch (service_choice)
+                {
                     case SERVICE_CONFIRMED_GET_ALARM_SUMMARY:
                     case SERVICE_CONFIRMED_GET_ENROLLMENT_SUMMARY:
                     case SERVICE_CONFIRMED_GET_EVENT_INFORMATION:
@@ -566,23 +644,38 @@ void apdu_handler(
                     case SERVICE_CONFIRMED_VT_DATA:
                         /* Security Services */
                     case SERVICE_CONFIRMED_AUTHENTICATE:
-                        if (Confirmed_ACK_Function[service_choice] != NULL) {
-                            (Confirmed_ACK_Function[service_choice])
-                                (service_request, service_request_len, src,
-                                &service_ack_data);
+
+                        snprintf(lbuf, SIZE__DIAG_MESSAGE, "checking whether Confirmed_ACK_Function[%d] not null,", service_choice);
+                        show_diag(rname, lbuf, dflag_verbose);
+
+                        if (Confirmed_ACK_Function[service_choice] != NULL)
+                        {
+                            show_diag(rname, "Ok looks like we're making a function call via a pointer to a function . . .", dflag_verbose);
+
+                            (Confirmed_ACK_Function[service_choice]) (service_request, service_request_len, src, &service_ack_data);
                         }
+
+                        snprintf(lbuf, SIZE__DIAG_MESSAGE, "calling routine tsm_free_invoke_id(%d) . . .", invoke_id);
+                        show_diag(rname, lbuf, dflag_verbose);
                         tsm_free_invoke_id(invoke_id);
                         break;
+
                     default:
                         break;
                 }
                 break;
+
+
             case PDU_TYPE_SEGMENT_ACK:
+                show_diag(rname, "handling case PDU_TYPE_SEGMENT_ACK,", dflag_verbose);
                 /* FIXME: what about a denial of service attack here?
                    we could check src to see if that matched the tsm */
                 tsm_free_invoke_id(invoke_id);
                 break;
+
+
             case PDU_TYPE_ERROR:
+                show_diag(rname, "handling case PDU_TYPE_ERROR,", dflag_verbose);
                 invoke_id = apdu[1];
                 service_choice = apdu[2];
                 len = 3;
@@ -621,14 +714,20 @@ void apdu_handler(
                 }
                 tsm_free_invoke_id(invoke_id);
                 break;
+
+
             case PDU_TYPE_REJECT:
+                show_diag(rname, "handling case PDU_TYPE_REJECT,", dflag_verbose);
                 invoke_id = apdu[1];
                 reason = apdu[2];
                 if (Reject_Function)
                     Reject_Function(src, invoke_id, reason);
                 tsm_free_invoke_id(invoke_id);
                 break;
+
+
             case PDU_TYPE_ABORT:
+                show_diag(rname, "handling case PDU_TYPE_ABORT,", dflag_verbose);
                 server = apdu[0] & 0x01;
                 invoke_id = apdu[1];
                 reason = apdu[2];
@@ -636,9 +735,15 @@ void apdu_handler(
                     Abort_Function(src, invoke_id, reason, server);
                 tsm_free_invoke_id(invoke_id);
                 break;
+
             default:
+                show_diag(rname, "handling default case and doing nothing,", dflag_verbose);
                 break;
         }
     }
+
+
+    show_diag(rname, "returning to caller . . .", dflag_verbose);
+
     return;
 }

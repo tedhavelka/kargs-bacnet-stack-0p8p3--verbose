@@ -224,6 +224,7 @@ uint16_t dlmstp_receive(
 
 
     show_diag(rname, "starting,", dflag_verbose);
+    show_diag(rname, "--- zztop zztop zztop ---,", dflag_verbose);
 
     /* see if there is a packet available, and a place
        to put the reply (if necessary) and process it */
