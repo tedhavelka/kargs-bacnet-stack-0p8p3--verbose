@@ -178,13 +178,32 @@ uint8_t Send_Read_Property_Request(
 
     show_diag(rname, "starting,", dflag_verbose);
 
+
     /* is the device bound? */
+//    snprintf(lbuf, SIZE__DIAG_MESSAGE, "calling Kargs' BACnet routine address_get_by_device(%u, %u, %u),",
+//      (unsigned int)device_id, max_apdu, (unsigned int)dest);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "calling Kargs' BACnet routine address_get_by_device(%u, %u, BACNET_ADDRESS dest),", device_id, max_apdu);
+    show_diag(rname, lbuf, dflag_verbose);
+
+    show_diag(rname, "where arguments are 'device id', address of 'max ADPU', and pointer to BACNET_ADDRESS 'dest',",
+      dflag_verbose);
+    show_diag(rname, "calling . . .", dflag_verbose);
+
     status = address_get_by_device(device_id, &max_apdu, &dest);
-    if (status) {
+
+    show_diag(rname, "checking return value of latest routing called,", dflag_verbose);
+    if (status)
+    {
+        show_diag(rname, "calling routine Send_Read_Property_Request_Address() . . .", dflag_verbose);
         invoke_id =
             Send_Read_Property_Request_Address(&dest, max_apdu, object_type,
             object_instance, object_property, array_index);
+
+        show_diag(rname, "back from Send_Read_Property_Request_Address(),", dflag_verbose);
     }
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "returning invoke_id = %d to calling code . . .", invoke_id);
+    show_diag(rname, lbuf, dflag_verbose);
 
     return invoke_id;
 }

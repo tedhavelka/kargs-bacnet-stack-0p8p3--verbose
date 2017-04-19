@@ -239,7 +239,8 @@ uint16_t dlmstp_receive(
         show_diag(rname, "checking whether Receive_Packet.pud_len is not zero,", dflag_verbose);
         if (Receive_Packet.pdu_len)
         {
-            show_diag(rname, "incrementing global variable MSTP_Packets,", dflag_verbose);
+            snprintf(lbuf, SIZE__DIAG_MESSAGE, "incrementing global variable MSTP_Packets to %d,", MSTP_Packets);
+            show_diag(rname, lbuf, dflag_verbose);
             MSTP_Packets++;
 
             show_diag(rname, "checking if 'src' true,", dflag_verbose);
