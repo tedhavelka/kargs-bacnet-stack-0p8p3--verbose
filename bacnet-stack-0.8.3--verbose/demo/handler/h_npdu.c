@@ -87,13 +87,16 @@ void npdu_handler(
 
     char lbuf[SIZE__DIAG_MESSAGE];
 
-    unsigned int dflag_announce   = DIAGNOSTICS_ON;
-    unsigned int dflag_verbose    = DIAGNOSTICS_ON;
+// DIAGNOSTICS_ON;
+    unsigned int dflag_announce = DIAGNOSTICS__NPDU_HANDLER;
+    unsigned int dflag_verbose = DIAGNOSTICS__NPDU_HANDLER;
 
     DIAG__SET_ROUTINE_NAME("npdu_handler");
 
 
     show_diag(rname, "starting,", dflag_announce);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "dflag_announce holds %u and dflag_verbose holds %u,", dflag_announce, dflag_verbose);
+    show_diag(rname, lbuf, dflag_verbose);
 
     show_diag(rname, "checking pdu[0] to determine whether we know present protocol version,", dflag_announce);
     /* only handle the version that we know how to handle */

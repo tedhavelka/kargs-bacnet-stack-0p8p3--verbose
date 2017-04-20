@@ -505,8 +505,9 @@ void apdu_handler(
 
     char lbuf[SIZE__DIAG_MESSAGE];
 
-    unsigned int dflag_announce   = DIAGNOSTICS_ON;
-    unsigned int dflag_verbose    = DIAGNOSTICS_ON;
+// DIAGNOSTICS_ON;
+    unsigned int dflag_announce = DIAGNOSTICS__APDU_HANDLER;
+    unsigned int dflag_verbose = DIAGNOSTICS__APDU_HANDLER;
 
 //    DIAG__SET_ROUTINE_NAME("~src/apdu.c apdu_handler");
     DIAG__SET_ROUTINE_NAME("apdu_handler");

@@ -218,7 +218,9 @@ uint16_t dlmstp_receive(
 
 // diagnostics:
     char lbuf[SIZE__DIAG_MESSAGE];
-    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+ 
+//    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS__DLMSTP_RECEIVE;
 
     DIAG__SET_ROUTINE_NAME("dlmstp_receive()");
 

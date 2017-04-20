@@ -318,7 +318,8 @@ bool tsm_invoke_id_free(
 
 // diagnostics:
     char lbuf[SIZE__DIAG_MESSAGE];
-    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+//    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS__TSM_INVOKE_ID_FREE;
 
     DIAG__SET_ROUTINE_NAME("tsm_invoke_id_free()");
 
@@ -353,10 +354,12 @@ bool tsm_invoke_id_failed(
 
 // diagnostics:
     char lbuf[SIZE__DIAG_MESSAGE];
-    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+//    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS__TSM_INVOKE_ID_FAILED;
+
     DIAG__SET_ROUTINE_NAME("tsm_invoke_id_failed()");
 
-//    printf("%s:  starting,", rname);
+
     show_diag(rname, "starting,", dflag_verbose);
 
     index = tsm_find_invokeID_index(invokeID);

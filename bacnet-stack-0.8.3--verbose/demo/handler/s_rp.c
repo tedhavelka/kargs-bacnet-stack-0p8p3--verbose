@@ -172,7 +172,10 @@ uint8_t Send_Read_Property_Request(
 
 // diagnostics:
     char lbuf[SIZE__DIAG_MESSAGE];
-    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+//    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS__SEND_READ_PROPERTY_REQUEST;
+
     DIAG__SET_ROUTINE_NAME("Send_Read_Property_Request()");
 
 

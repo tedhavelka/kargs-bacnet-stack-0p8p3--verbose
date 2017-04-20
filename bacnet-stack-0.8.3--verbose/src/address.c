@@ -583,10 +583,12 @@ bool address_bind_request( uint32_t device_id, unsigned *max_apdu, BACNET_ADDRES
 
     int while_loop_count = 0;
 
-    unsigned int dflag_announce = DIAGNOSTICS_ON;
-    unsigned int dflag_verbose = DIAGNOSTICS_ON;
-    unsigned int dflag_routine_calls = DIAGNOSTICS_ON;
-    unsigned int dflag__show_routine_call_every_n_calls = DIAGNOSTICS_ON;
+// DIAGNOSTICS_ON;
+    unsigned int dflag_announce = DIAGNOSTICS__ADDRESS_BIND_REQUEST;
+    unsigned int dflag_verbose = DIAGNOSTICS__ADDRESS_BIND_REQUEST;
+    unsigned int dflag_routine_calls = DIAGNOSTICS__ADDRESS_BIND_REQUEST;
+    unsigned int dflag__show_routine_call_every_n_calls = DIAGNOSTICS__ADDRESS_BIND_REQUEST;
+
 
 // 2017-03-30 - this routine called frequently and rapidly, so Ted adding these:
 
