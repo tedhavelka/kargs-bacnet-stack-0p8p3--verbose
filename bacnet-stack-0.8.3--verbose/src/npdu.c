@@ -225,6 +225,10 @@ int npdu_encode_pdu(
     return len;
 }
 
+
+
+
+
 /* Configure the NPDU portion of the packet for an APDU */
 /* This function does not handle the network messages, just APDUs. */
 /* From BACnet 5.1:
@@ -284,6 +288,9 @@ void npdu_encode_npdu_data(
         npdu_data->hop_count = HOP_COUNT_DEFAULT;
     }
 }
+
+
+
 
 /** Decode the NPDU portion of a received message, particularly the NCPI byte.
  *  The Network Layer Protocol Control Information byte is described

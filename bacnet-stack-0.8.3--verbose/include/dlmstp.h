@@ -30,6 +30,11 @@
 #include "bacdef.h"
 #include "npdu.h"
 
+
+
+
+
+
 /* defines specific to MS/TP */
 /* preamble+type+dest+src+len+crc8+crc16 */
 #define MAX_HEADER (2+1+1+1+2+1+2)
@@ -115,6 +120,16 @@ extern "C" {
         void);
     bool dlmstp_send_pdu_queue_empty(void);
     bool dlmstp_send_pdu_queue_full(void);
+
+
+
+// 2017-05-09 - Added by Ted for diagnostics and code tracing purposes:
+
+#include <ringbuf.h>
+
+//    RING_BUFFER* address_of_ports_linux_dlmstp_pdu_queue(const char* caller);
+    unsigned int address_of_ports_linux_dlmstp_pdu_queue(const char* caller);
+
 
 #ifdef __cplusplus
 }

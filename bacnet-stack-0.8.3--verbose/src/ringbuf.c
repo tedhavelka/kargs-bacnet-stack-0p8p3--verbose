@@ -42,6 +42,14 @@
 // #include "ringbuf.h"
 #include <ringbuf.h>
 
+
+
+// 2017-05-08 - Added by Ted for code tracing purposes:
+
+#include <diagnostics.h>
+
+
+
 /****************************************************************************
 * DESCRIPTION: Returns the number of elements in the ring buffer
 * RETURN:      Number of elements in the ring buffer
@@ -248,6 +256,9 @@ bool Ringbuf_Data_Put(RING_BUFFER * b, volatile uint8_t *data_element)
     return status;
 }
 
+
+
+
 /****************************************************************************
 * DESCRIPTION: Configures the ring buffer
 * RETURN:      none
@@ -256,21 +267,64 @@ bool Ringbuf_Data_Put(RING_BUFFER * b, volatile uint8_t *data_element)
 *   element_count must be a power of two
 *****************************************************************************/
 void Ringbuf_Init(
-    RING_BUFFER * b,    /* ring buffer structure */
+    RING_BUFFER * b,            /* ring buffer structure */
     volatile uint8_t * buffer,  /* data block or array of data */
     unsigned element_size,      /* size of one element in the data block */
-    unsigned element_count)
-{       /* number of elements in the data block */
-    if (b) {
+    unsigned element_count)     /* number of elements in the data block */
+{
+
+    char lbuf[SIZE__DIAG_MESSAGE];
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_warning = DIAGNOSTICS_ON;
+
+
+    DIAG__SET_ROUTINE_NAME("Ringbuf_Init");
+
+    show_diag(rname, "starting,", dflag_announce);
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "%s", "called with following parameters:");
+    show_diag(rname, lbuf, dflag_verbose);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "Ring buffer pointer which holds %lu", (unsigned long int)b);
+    show_diag(rname, lbuf, dflag_verbose);
+    if (buffer)
+    {
+        snprintf(lbuf, SIZE__DIAG_MESSAGE, "byte buffer whose first element holds %d", buffer[0]);
+        show_diag(rname, lbuf, dflag_verbose);
+    }
+    else
+    {
+        show_diag(rname, "pointer to byte buffer that holds null,", dflag_verbose);
+    }
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "data element size of %u", element_size);
+    show_diag(rname, lbuf, dflag_verbose);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "data element count of %u", element_count);
+    show_diag(rname, lbuf, dflag_verbose);
+
+
+    if (b)
+    {
         b->head = 0;
         b->tail = 0;
         b->buffer = buffer;
         b->element_size = element_size;
         b->element_count = element_count;
     }
+    else
+    {
+        show_diag(rname, "WARNING - received a ring buffer pointer which is null!", dflag_warning);
+    }
+
+
+    show_diag(rname, "done.", dflag_announce);
 
     return;
+
 }
+
+
+
+
 
 #ifdef TEST
 #include <assert.h>
@@ -320,7 +374,12 @@ static void testRingAroundBuffer(
     ct_test(pTest, Ringbuf_Empty(test_buffer));
 }
 
+
+
+
+
 /* test the ring buffer */
+
 static void testRingBuf(
     Test * pTest,
     uint8_t * data_store,
@@ -361,6 +420,7 @@ static void testRingBuf(
         ct_test(pTest, status == true);
         ct_test(pTest, !Ringbuf_Empty(&test_buffer));
     }
+
     /* verify actions on full buffer */
     for (index = 0; index < element_count; index++) {
         for (data_index = 0; data_index < element_size; data_index++) {

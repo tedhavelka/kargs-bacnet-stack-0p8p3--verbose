@@ -104,25 +104,39 @@ struct mstp_pdu_packet {
     uint16_t length;
     uint8_t buffer[MAX_MPDU];
 };
+
+
 /* count must be a power of 2 for ringbuf library */
 #ifndef MSTP_PDU_PACKET_COUNT
 #define MSTP_PDU_PACKET_COUNT 8
 #endif
+
 static struct mstp_pdu_packet PDU_Buffer[MSTP_PDU_PACKET_COUNT];
+
 static RING_BUFFER PDU_Queue;
+
 /* The minimum time without a DataAvailable or ReceiveError event */
 /* that a node must wait for a station to begin replying to a */
 /* confirmed request: 255 milliseconds. (Implementations may use */
 /* larger values for this timeout, not to exceed 300 milliseconds.) */
 static uint16_t Treply_timeout = 300;
+
 /* The minimum time without a DataAvailable or ReceiveError event that a */
 /* node must wait for a remote node to begin using a token or replying to */
 /* a Poll For Master frame: 20 milliseconds. (Implementations may use */
 /* larger values for this timeout, not to exceed 100 milliseconds.) */
 static uint8_t Tusage_timeout = 100;
+
 /* Timer that indicates line silence - and functions */
 
 static struct timeval start;
+
+
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//  SECTION - Kargs' BACnet stack routine definitions
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 static uint32_t Timer_Silence(
     void *pArg)
@@ -876,6 +890,34 @@ static char *Network_Interface = NULL;
 
 
 
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//  SECTION - routines added by Ted
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+// RING_BUFFER* address_of_ports_linux_dlmstp_pdu_queue(const char* caller)  . . . this routine not appearing in dlmstp.o, nor libkargs.so - TMH
+unsigned int address_of_ports_linux_dlmstp_pdu_queue(const char* caller)
+{
+
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+//    unsigned int dflag_verbose = DIAGNOSTICS__DLMSTP_RECEIVE;
+
+    DIAG__SET_ROUTINE_NAME("address_of_ports_linux_dlmstp_pdu_queue()");
+
+
+//    return &PDU_Queue;
+    return (unsigned int)&PDU_Queue;
+}
+
+
+
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//  SECTION - main line code, authored by Steve Kargs
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 int main(int argc, char *argv[])
 {

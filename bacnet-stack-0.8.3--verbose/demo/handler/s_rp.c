@@ -1,4 +1,5 @@
-/**************************************************************************
+/*********************************************************************
+
 *
 * Copyright (C) 2005 Steve Karg <skarg@users.sourceforge.net>
 *
@@ -22,6 +23,7 @@
 * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 *
 *********************************************************************/
+
 #include <stddef.h>
 #include <stdint.h>
 #include <errno.h>
@@ -83,21 +85,46 @@ uint8_t Send_Read_Property_Request_Address(
     BACNET_READ_PROPERTY_DATA data;
     BACNET_NPDU_DATA npdu_data;
 
-    if (!dcc_communication_enabled()) {
+
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+//    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_announce = DIAGNOSTICS__SEND_READ_PROPERTY_REQUEST_ADDRESS;
+    unsigned int dflag_verbose = DIAGNOSTICS__SEND_READ_PROPERTY_REQUEST_ADDRESS;
+
+    DIAG__SET_ROUTINE_NAME("Send_Read_Property_Request_Address");
+
+
+
+    show_diag(rname, "starting,", dflag_announce);
+
+    if (!dcc_communication_enabled())
+    {
+        show_diag(rname, "dcc commmunication not enabled, returning zero to caller . . .", dflag_verbose);
         return 0;
     }
-    if (!dest) {
+
+    if (!dest)
+    {
+        show_diag(rname, "BACnet address at *dest appears null, returning zero to caller . . .", dflag_verbose);
         return 0;
     }
+
     /* is there a tsm available? */
     invoke_id = tsm_next_free_invokeID();
-    if (invoke_id) {
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "routine tsm_next_free_invokeID() return invoke ID of value %d,", invoke_id);
+    show_diag(rname, lbuf, dflag_verbose);
+
+    if (invoke_id)
+    {
         /* encode the NPDU portion of the packet */
         datalink_get_my_address(&my_address);
         npdu_encode_npdu_data(&npdu_data, true, MESSAGE_PRIORITY_NORMAL);
         pdu_len =
             npdu_encode_pdu(&Handler_Transmit_Buffer[0], dest, &my_address,
             &npdu_data);
+
         /* encode the APDU portion of the packet */
         data.object_type = object_type;
         data.object_instance = object_instance;
@@ -137,6 +164,17 @@ uint8_t Send_Read_Property_Request_Address(
 #endif
         }
     }
+
+// 2017-05-08 - ELSE block added by Ted:
+    else
+    {
+        show_diag(rname, "received an invoke ID of zero,", dflag_verbose);
+        show_diag(rname, "taking this to mean no Transaction State Machine (tsm) available,", dflag_verbose);
+    }
+
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "returning invoke ID value of %d to caller . . .", invoke_id);
+    show_diag(rname, lbuf, dflag_announce);
 
     return invoke_id;
 }

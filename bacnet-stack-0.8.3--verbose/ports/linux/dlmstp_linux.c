@@ -879,31 +879,44 @@ uint32_t dlmstp_baud_rate(
     }
 }
 
+
+
+
 void dlmstp_get_my_address(
-    void *poPort,
-    BACNET_ADDRESS * my_address)
+  void *poPort,
+  BACNET_ADDRESS * my_address)
 {
     int i = 0;  /* counter */
     SHARED_MSTP_DATA *poSharedData;
-    struct mstp_port_struct_t *mstp_port =
-        (struct mstp_port_struct_t *) poPort;
-    if (!mstp_port) {
+    struct mstp_port_struct_t *mstp_port = (struct mstp_port_struct_t *) poPort;
+
+
+    if (!mstp_port)
+    {
         return;
     }
+
     poSharedData = (SHARED_MSTP_DATA *) mstp_port->UserData;
-    if (!poSharedData) {
+    if (!poSharedData)
+    {
         return;
     }
+
     my_address->mac_len = 1;
     my_address->mac[0] = mstp_port->This_Station;
     my_address->net = 0;        /* local only, no routing */
     my_address->len = 0;
-    for (i = 0; i < MAX_MAC_LEN; i++) {
+
+    for (i = 0; i < MAX_MAC_LEN; i++)
+    {
         my_address->adr[i] = 0;
     }
 
     return;
 }
+
+
+
 
 void dlmstp_get_broadcast_address(
     BACNET_ADDRESS * dest)
