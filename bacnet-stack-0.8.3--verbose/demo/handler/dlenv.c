@@ -349,10 +349,13 @@ void dlenv_init( void)
         apdu_retries_set((uint8_t) strtol(pEnv, NULL, 0));
     }
 
+
+    show_diag(rname, "about to call datalink_init() which likely is dlmstp_init() . . .", dflag_verbose);
     if (!datalink_init(getenv("BACNET_IFACE")))
     {
         exit(1);
     }
+    show_diag(rname, "back from routine dlmstp_init(),", dflag_verbose);
 
 #if (MAX_TSM_TRANSACTIONS)
     pEnv = getenv("BACNET_INVOKE_ID");

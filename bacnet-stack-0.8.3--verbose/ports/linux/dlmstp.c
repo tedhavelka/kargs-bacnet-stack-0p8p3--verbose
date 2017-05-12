@@ -770,12 +770,21 @@ bool dlmstp_init(char *ifname)
     unsigned long hThread = 0;
     int rv = 0;
 
+// diagnostics:
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
 //    DIAG__SET_ROUTINE_NAME("dlmstp_init");
+    DIAG__SET_ROUTINE_NAME("dlmstp_init");
 
 
     printf("\n# %s/dlmstp_init():  starting,\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
 
     /* initialize PDU queue */
+    show_diag(rname, "about to call ring buffer initializing routine, with", dflag_verbose);
+    show_diag(rname, "parameter 1 a pointer to a RING_BUFFER structure,", dflag_verbose);
+    show_diag(rname, "parameter 2 a pointer to array of unsigned chars,:", dflag_verbose);
+    show_diag(rname, "parameter 3 size of array element, in this case size of one (1) byte,", dflag_verbose);
+    show_diag(rname, "parameter 4 count of array elements,", dflag_verbose);
     printf("\n# %s/dlmstp_init():  calling routine Ringbuf_Init() . . .\n", SOURCE_FILE_IDENTIFIER__2017_INQUIRY);
     Ringbuf_Init(&PDU_Queue, (uint8_t *) & PDU_Buffer, sizeof(struct mstp_pdu_packet), MSTP_PDU_PACKET_COUNT);
 
@@ -870,6 +879,85 @@ bool dlmstp_init(char *ifname)
 
 
 
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//  SECTION - routines added by Ted
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+RING_BUFFER* address_of_ports_linux_dlmstp_pdu_queue(const char* caller)  // . . . this routine not appearing in dlmstp.o, nor libkargs.so - TMH
+// unsigned int address_of_ports_linux_dlmstp_pdu_queue(const char* caller)
+{
+//-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!
+//
+//  - 2017-05-10 WED - For some reason the GNU linker `ld` can't
+//    find reference to this routine, when compiling bacnet-stub.c
+//    which uses the shared object libkargs-bacnet-mstp-0p8p3.so.
+//    Ted working on a work-around for this, and hopefully too will
+//    get time to investigate and learn why this routine fails to
+//    to seemingly get compiled into the shared object.  Utility
+//    `nm` doesn't list it either, though other routines in this
+//    source file appear in output of `nm` when it is given just
+//    the shared object file name . . .   - TMH
+//
+//-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!-!
+
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+//    unsigned int dflag_verbose = DIAGNOSTICS__DLMSTP_RECEIVE;
+
+    DIAG__SET_ROUTINE_NAME("address_of_ports_linux_dlmstp_pdu_queue()");
+
+
+    return &PDU_Queue;
+//    return (unsigned int)&PDU_Queue;
+}
+
+
+
+
+void wrapper_to_ringbuf_count(const char* caller)
+{
+
+    int count_of_bytes_in_ring_buffer;
+
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+    unsigned int dflag_stub = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("wrapper_to_ringbuf_count");
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "called by %s, this routine not yet fully implemented * * *", caller);
+    show_diag(rname, lbuf, dflag_stub);
+
+    printf("--- ZZTOP ---\n");
+    printf("- 2017-05-11 - wrapper_to_ringbuf_count() routine implemenation underway . . .\n");
+    printf("--- ZZTOP ---\n");
+
+
+//    count_of_bytes_in_ring_buffer = Ringbuf_Count(PDU_Queue);   <- gcc error "incompatible type for argument 1 of ‘Ringbuf_Count’"
+    count_of_bytes_in_ring_buffer = Ringbuf_Count(&PDU_Queue);
+
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "dlmstp dot c scoped ring buffer PDU_Queue holds %d bytes,", 
+      count_of_bytes_in_ring_buffer);
+    show_diag(rname, lbuf, dflag_stub);
+
+    show_diag(rname, "done.", dflag_stub);
+
+}
+
+
+
+
+
+
+
+
+
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+//  - SECTION - Kargs' Unit Testing Code
+// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
 #ifdef TEST_DLMSTP
 #include <stdio.h>
 
@@ -887,29 +975,6 @@ void apdu_handler(
 
 
 static char *Network_Interface = NULL;
-
-
-
-
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-//  SECTION - routines added by Ted
-// - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-// RING_BUFFER* address_of_ports_linux_dlmstp_pdu_queue(const char* caller)  . . . this routine not appearing in dlmstp.o, nor libkargs.so - TMH
-unsigned int address_of_ports_linux_dlmstp_pdu_queue(const char* caller)
-{
-
-// diagnostics:
-    char lbuf[SIZE__DIAG_MESSAGE];
-    unsigned int dflag_verbose = DIAGNOSTICS_ON;
-//    unsigned int dflag_verbose = DIAGNOSTICS__DLMSTP_RECEIVE;
-
-    DIAG__SET_ROUTINE_NAME("address_of_ports_linux_dlmstp_pdu_queue()");
-
-
-//    return &PDU_Queue;
-    return (unsigned int)&PDU_Queue;
-}
 
 
 

@@ -54,8 +54,10 @@ extern "C" {
 
     bool dlmstp_init(
         char *ifname);
+
     void dlmstp_reset(
         void);
+
     void dlmstp_cleanup(
         void);
 
@@ -127,10 +129,16 @@ extern "C" {
 
 #include <ringbuf.h>
 
-//    RING_BUFFER* address_of_ports_linux_dlmstp_pdu_queue(const char* caller);
-    unsigned int address_of_ports_linux_dlmstp_pdu_queue(const char* caller);
+    RING_BUFFER* address_of_ports_linux_dlmstp_pdu_queue(const char* caller);
+//    unsigned int address_of_ports_linux_dlmstp_pdu_queue(const char* caller);
 
 
+// 2017-05-11 THU - Ted tring to add another routine, as one just above
+//   which Ted added two days ago doesn't appear to compile into the
+//   shared object type library, and `ld` doesn't see it to complete
+//   a successful build of bacnet-stub.c . . .   - TMH
+
+void wrapper_to_ringbuf_count(const char* caller);
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */
