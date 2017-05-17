@@ -39,8 +39,13 @@
 
 /** @file rp.c  Encode/Decode Read Property and RP ACKs */
 
+
+
+
 #if BACNET_SVC_RP_A
+
 /* encode service */
+
 int rp_encode_apdu(
     uint8_t * apdu,
     uint8_t invoke_id,
@@ -84,7 +89,11 @@ int rp_encode_apdu(
 }
 #endif
 
+
+
+
 /* decode the service request only */
+
 int rp_decode_service_request(
     uint8_t * apdu,
     unsigned apdu_len,

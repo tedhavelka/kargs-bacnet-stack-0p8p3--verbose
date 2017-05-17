@@ -204,14 +204,32 @@ void tsm_set_confirmed_unsegmented_transaction(
     uint16_t j = 0;
     uint8_t index;
 
-    if (invokeID) {
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("tsm_set_confirmed_unsegmented_transaction");
+
+
+
+    if (invokeID)
+    {
         index = tsm_find_invokeID_index(invokeID);
-        if (index < MAX_TSM_TRANSACTIONS) {
+
+// 2017-05-17 - added by Ted:
+        snprintf(lbuf, SIZE__DIAG_MESSAGE, "setting TSM List index to %d,", index);
+        show_diag(rname, lbuf, dflag_verbose);
+
+        if (index < MAX_TSM_TRANSACTIONS)
+        {
             /* SendConfirmedUnsegmented */
             TSM_List[index].state = TSM_STATE_AWAIT_CONFIRMATION;
             TSM_List[index].RetryCount = 0;
+
             /* start the timer */
             TSM_List[index].RequestTimer = apdu_timeout();
+
             /* copy the data */
             for (j = 0; j < apdu_len; j++) {
                 TSM_List[index].apdu[j] = apdu[j];

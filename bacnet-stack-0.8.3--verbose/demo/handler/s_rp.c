@@ -88,6 +88,10 @@ uint8_t Send_Read_Property_Request_Address(
 
 // diagnostics:
     char lbuf[SIZE__DIAG_MESSAGE];
+    memset(lbuf, 0, SIZE__DIAG_MESSAGE);
+
+    char rname_plus[SIZE__ROUTINE_NAME];
+    memset(rname_plus, 0, SIZE__ROUTINE_NAME);
 
 //    unsigned int dflag_verbose = DIAGNOSTICS_ON;
     unsigned int dflag_announce = DIAGNOSTICS__SEND_READ_PROPERTY_REQUEST_ADDRESS;
@@ -125,6 +129,11 @@ uint8_t Send_Read_Property_Request_Address(
             npdu_encode_pdu(&Handler_Transmit_Buffer[0], dest, &my_address,
             &npdu_data);
 
+// 2017-05-17 - Ted attempting trace of Handler Transmit Buffer contents:
+        snprintf(rname_plus, SIZE__ROUTINE_NAME, "%s - %s", rname, "after call to npdu_encode_pdu()");
+        show_byte_array(rname_plus, (char*)Handler_Transmit_Buffer, 48, BYTE_ARRAY__DISPLAY_FORMAT__16_PER_LINE__GROUPS_OF_FOUR);
+
+
         /* encode the APDU portion of the packet */
         data.object_type = object_type;
         data.object_instance = object_instance;
@@ -133,7 +142,12 @@ uint8_t Send_Read_Property_Request_Address(
 
         len = rp_encode_apdu(&Handler_Transmit_Buffer[pdu_len], invoke_id, &data);
 
+// 2017-05-17 - Ted attempting trace of Handler Transmit Buffer contents:
+        snprintf(rname_plus, SIZE__ROUTINE_NAME, "%s - %s", rname, "after call to rp_encode_apdu()");
+        show_byte_array(rname_plus, (char*)Handler_Transmit_Buffer, 48, BYTE_ARRAY__DISPLAY_FORMAT__16_PER_LINE__GROUPS_OF_FOUR);
+
         pdu_len += len;
+
 
         /* will it fit in the sender?
            note: if there is a bottleneck router in between
@@ -144,26 +158,37 @@ uint8_t Send_Read_Property_Request_Address(
         {
             tsm_set_confirmed_unsegmented_transaction(invoke_id, dest,
                 &npdu_data, &Handler_Transmit_Buffer[0], (uint16_t) pdu_len);
-            bytes_sent =
-                datalink_send_pdu(dest, &npdu_data,
-                &Handler_Transmit_Buffer[0], pdu_len);
+
+// // 2017-05-15 - added by Ted:
+//            show_diag(rname, "calling wrapper routine to Ringbuf_Count() . . .", dflag_verbose);
+//            wrapper_to_ringbuf_count(rname);
+
+            bytes_sent = datalink_send_pdu(dest, &npdu_data, &Handler_Transmit_Buffer[0], pdu_len);
+// 2017-05-17 - Ted attempting trace of Handler Transmit Buffer contents:
+            snprintf(rname_plus, SIZE__ROUTINE_NAME, "%s - %s", rname, "after call to dlmstp_send_pdu()");
+            show_byte_array(rname_plus, (char*)Handler_Transmit_Buffer, 47, BYTE_ARRAY__DISPLAY_FORMAT__16_PER_LINE__GROUPS_OF_FOUR);
+
+
+
 #if PRINT_ENABLED
             if (bytes_sent <= 0)
-                fprintf(stderr, "Failed to Send ReadProperty Request (%s)!\n",
-                    strerror(errno));
+            {
+                fprintf(stderr, "Failed to Send ReadProperty Request (%s)!\n", strerror(errno));
+            }
 #endif
+
         }
         else
         {
             tsm_free_invoke_id(invoke_id);
             invoke_id = 0;
 #if PRINT_ENABLED
-            fprintf(stderr,
-                "Failed to Send ReadProperty Request "
-                "(exceeds destination maximum APDU)!\n");
+            fprintf(stderr, "Failed to Send ReadProperty Request " "(exceeds destination maximum APDU)!\n");
 #endif
+
         }
-    }
+
+    } // end IF-block testing whether invoke_id is true 
 
 // 2017-05-08 - ELSE block added by Ted:
     else

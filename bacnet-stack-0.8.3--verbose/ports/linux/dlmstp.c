@@ -930,9 +930,9 @@ void wrapper_to_ringbuf_count(const char* caller)
     snprintf(lbuf, SIZE__DIAG_MESSAGE, "called by %s, this routine not yet fully implemented * * *", caller);
     show_diag(rname, lbuf, dflag_stub);
 
-    printf("--- ZZTOP ---\n");
-    printf("- 2017-05-11 - wrapper_to_ringbuf_count() routine implemenation underway . . .\n");
-    printf("--- ZZTOP ---\n");
+//    printf("--- ZZTOP ---\n");
+//    printf("- 2017-05-11 - wrapper_to_ringbuf_count() routine implemenation underway . . .\n");
+//    printf("--- ZZTOP ---\n");
 
 
 //    count_of_bytes_in_ring_buffer = Ringbuf_Count(PDU_Queue);   <- gcc error "incompatible type for argument 1 of ‘Ringbuf_Count’"
