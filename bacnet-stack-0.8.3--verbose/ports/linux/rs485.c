@@ -68,6 +68,14 @@
 
 #include "dlmstp_linux.h"
 
+
+
+// 2017-05-17 - added by Ted:
+#include <diagnostics.h>
+
+
+
+
 /* Posix serial programming reference:
 http://www.easysw.com/~mike/serial/serial.html */
 
@@ -424,6 +432,10 @@ bool RS485_Set_Baud_Rate(
     return valid;
 }
 
+
+
+
+
 /****************************************************************************
 * DESCRIPTION: Transmit a frame on the wire
 * RETURN:      none
@@ -432,23 +444,40 @@ bool RS485_Set_Baud_Rate(
 *****************************************************************************/
 void RS485_Send_Frame(
     volatile struct mstp_port_struct_t *mstp_port,      /* port specific data */
-    uint8_t * buffer,   /* frame to send (up to 501 bytes of data) */
-    uint16_t nbytes)
-{       /* number of bytes of data (up to 501) */
+    uint8_t * buffer,      /* frame to send (up to 501 bytes of data) */
+    uint16_t nbytes)       /* number of bytes of data (up to 501) */
+{
     uint32_t turnaround_time = Tturnaround * 1000;
     uint32_t baud;
     ssize_t written = 0;
     int greska;
     SHARED_MSTP_DATA *poSharedData = NULL;
 
-    if (mstp_port) {
+// diagnostics:
+    char lbuf[SIZE__DIAG_MESSAGE];
+
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("RS485_Send_Frame");
+
+
+    show_diag(rname, "starting,", dflag_announce);
+    snprintf(lbuf, SIZE__DIAG_MESSAGE, "called to send %d bytes,", nbytes);
+    show_diag(rname, lbuf, dflag_verbose);
+
+    if (mstp_port)
+    {
         poSharedData = (SHARED_MSTP_DATA *) mstp_port->UserData;
     }
-    if (!poSharedData) {
+
+    if (!poSharedData)
+    {
         baud = RS485_Get_Baud_Rate();
         /* sleeping for turnaround time is necessary to give other devices
            time to change from sending to receiving state. */
         usleep(turnaround_time / baud);
+
         /*
            On  success,  the  number of bytes written are returned (zero indicates
            nothing was written).  On error, -1  is  returned,  and  errno  is  set
@@ -458,18 +487,25 @@ void RS485_Send_Frame(
          */
         written = write(RS485_Handle, buffer, nbytes);
         greska = errno;
-        if (written <= 0) {
+        if (written <= 0)
+        {
             printf("write error: %s\n", strerror(greska));
-        } else {
+        }
+        else
+        {
             /* wait until all output has been transmitted. */
             tcdrain(RS485_Handle);
         }
+
         /*  tcdrain(RS485_Handle); */
         /* per MSTP spec, sort of */
-        if (mstp_port) {
+        if (mstp_port)
+        {
             mstp_port->SilenceTimerReset((void *) mstp_port);
         }
-    } else {
+    }
+    else
+    {
         baud = RS485_Get_Port_Baud_Rate(mstp_port);
         /* sleeping for turnaround time is necessary to give other devices
            time to change from sending to receiving state. */
@@ -483,21 +519,32 @@ void RS485_Send_Frame(
          */
         written = write(poSharedData->RS485_Handle, buffer, nbytes);
         greska = errno;
-        if (written <= 0) {
+        if (written <= 0)
+        {
             printf("write error: %s\n", strerror(greska));
-        } else {
+        }
+        else
+        {
             /* wait until all output has been transmitted. */
             tcdrain(poSharedData->RS485_Handle);
         }
+
         /*  tcdrain(RS485_Handle); */
         /* per MSTP spec, sort of */
-        if (mstp_port) {
+        if (mstp_port)
+        {
             mstp_port->SilenceTimerReset((void *) mstp_port);
         }
     }
 
+    show_diag(rname, "done.", dflag_announce);
+
     return;
-}
+
+} // end routine RS485_Send_Frame()
+
+
+
 
 /****************************************************************************
 * DESCRIPTION: Get a byte of receive data

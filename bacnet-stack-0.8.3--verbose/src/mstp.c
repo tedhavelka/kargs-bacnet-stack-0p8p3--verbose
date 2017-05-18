@@ -267,24 +267,40 @@ uint16_t MSTP_Create_Frame(
     return index;       /* returns the frame length */
 }
 
+
+
+
 void MSTP_Create_And_Send_Frame(
     volatile struct mstp_port_struct_t *mstp_port,      /* port to send from */
     uint8_t frame_type, /* type of frame to send - see defines */
     uint8_t destination,        /* destination address */
     uint8_t source,     /* source address */
     uint8_t * data,     /* any data to be sent - may be null */
-    uint16_t data_len)
-{       /* number of bytes of data (up to 501) */
+    uint16_t data_len)       /* number of bytes of data (up to 501) */
+{
     uint16_t len = 0;   /* number of bytes to send */
+
+
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("MSTP_Master_Node_FSM");
+
 
     len =
         MSTP_Create_Frame((uint8_t *) & mstp_port->OutputBuffer[0],
         mstp_port->OutputBufferSize, frame_type, destination, source, data,
         data_len);
 
+show_diag(rname, "calling 'RS485 send frame' routine . . .", dflag_verbose);
     RS485_Send_Frame(mstp_port, (uint8_t *) & mstp_port->OutputBuffer[0], len);
+show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
     /* FIXME: be sure to reset SilenceTimer() after each octet is sent! */
+
 }
+
+
+
+
 
 void MSTP_Receive_Frame_FSM(
     volatile struct mstp_port_struct_t *mstp_port)
@@ -595,7 +611,11 @@ void MSTP_Receive_Frame_FSM(
     return;
 }
 
+
+
+
 /* returns true if we need to transition immediately */
+
 bool MSTP_Master_Node_FSM(
     volatile struct mstp_port_struct_t * mstp_port)
 {
@@ -604,11 +624,25 @@ bool MSTP_Master_Node_FSM(
     uint8_t next_this_station = 0;
     uint8_t next_next_station = 0;
     uint16_t my_timeout = 10, ns_timeout = 0;
+
     /* transition immediately to the next state */
     bool transition_now = false;
     MSTP_MASTER_STATE master_state = mstp_port->master_state;
 
+
+// diagnostics:
+    unsigned int dflag_announce = DIAGNOSTICS_OFF;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("MSTP_Master_Node_FSM");
+
+
+
+    show_diag(rname, "starting,", dflag_announce);
+
+
     /* some calculations that several states need */
+
     next_poll_station =
         (mstp_port->Poll_Station + 1) % (mstp_port->Nmax_master + 1);
     next_this_station =
@@ -727,9 +761,11 @@ bool MSTP_Master_Node_FSM(
             } else {
                 uint8_t frame_type = mstp_port->OutputBuffer[2];
                 uint8_t destination = mstp_port->OutputBuffer[3];
+show_diag(rname, "calling 'RS485 send frame' routine . . .", dflag_verbose);
                 RS485_Send_Frame(mstp_port,
                     (uint8_t *) & mstp_port->OutputBuffer[0],
                     (uint16_t) length);
+show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 mstp_port->FrameCount++;
                 switch (frame_type) {
                     case FRAME_TYPE_BACNET_DATA_EXPECTING_REPLY:
@@ -1092,9 +1128,11 @@ bool MSTP_Master_Node_FSM(
                 /* (the mechanism used to determine this is a local matter), */
                 /* then call MSTP_Create_And_Send_Frame to transmit the reply frame  */
                 /* and enter the IDLE state to wait for the next frame. */
+show_diag(rname, "calling 'RS485 send frame' routine . . .", dflag_verbose);
                 RS485_Send_Frame(mstp_port,
                     (uint8_t *) & mstp_port->OutputBuffer[0],
                     (uint16_t) length);
+show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 mstp_port->master_state = MSTP_MASTER_STATE_IDLE;
                 /* clear our flag we were holding for comparison */
                 mstp_port->ReceivedValidFrame = false;
@@ -1132,13 +1170,31 @@ bool MSTP_Master_Node_FSM(
             mstptext_master_state(mstp_port->master_state));
     }
 
+
+    show_diag(rname, "done.", dflag_announce);
+
     return transition_now;
-}
+
+} // end routine MSTP_Master_Node_FSM()
+
+
+
+
 
 void MSTP_Slave_Node_FSM(
     volatile struct mstp_port_struct_t *mstp_port)
 {
+
     unsigned length = 0;
+
+// diagnostics:
+    unsigned int dflag_announce = DIAGNOSTICS_ON;
+//    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("MSTP_Slave_Node_FSM");
+
+
+    show_diag(rname, "starting,", dflag_announce);
 
     mstp_port->master_state = MSTP_MASTER_STATE_IDLE;
     if (mstp_port->ReceivedInvalidFrame == true) {
@@ -1194,6 +1250,9 @@ void MSTP_Slave_Node_FSM(
                 break;
         }
     }
+
+    show_diag(rname, "done.", dflag_announce);
+
 }
 
 

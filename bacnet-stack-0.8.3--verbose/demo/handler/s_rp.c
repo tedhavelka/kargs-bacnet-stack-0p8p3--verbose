@@ -95,7 +95,8 @@ uint8_t Send_Read_Property_Request_Address(
 
 //    unsigned int dflag_verbose = DIAGNOSTICS_ON;
     unsigned int dflag_announce = DIAGNOSTICS__SEND_READ_PROPERTY_REQUEST_ADDRESS;
-    unsigned int dflag_verbose = DIAGNOSTICS__SEND_READ_PROPERTY_REQUEST_ADDRESS;
+//    unsigned int dflag_verbose = DIAGNOSTICS__SEND_READ_PROPERTY_REQUEST_ADDRESS;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
 
     DIAG__SET_ROUTINE_NAME("Send_Read_Property_Request_Address");
 
@@ -130,6 +131,9 @@ uint8_t Send_Read_Property_Request_Address(
             &npdu_data);
 
 // 2017-05-17 - Ted attempting trace of Handler Transmit Buffer contents:
+        snprintf(lbuf, SIZE__ROUTINE_NAME, "routine npdu_encode_pdu() returns encoded byte count of %d,", pdu_len);
+        show_diag(rname, lbuf, dflag_verbose);
+
         snprintf(rname_plus, SIZE__ROUTINE_NAME, "%s - %s", rname, "after call to npdu_encode_pdu()");
         show_byte_array(rname_plus, (char*)Handler_Transmit_Buffer, 48, BYTE_ARRAY__DISPLAY_FORMAT__16_PER_LINE__GROUPS_OF_FOUR);
 
@@ -143,6 +147,9 @@ uint8_t Send_Read_Property_Request_Address(
         len = rp_encode_apdu(&Handler_Transmit_Buffer[pdu_len], invoke_id, &data);
 
 // 2017-05-17 - Ted attempting trace of Handler Transmit Buffer contents:
+        snprintf(lbuf, SIZE__ROUTINE_NAME, "routine rp_encode_apdu() returns encoded byte count of %d,", len);
+        show_diag(rname, lbuf, dflag_verbose);
+
         snprintf(rname_plus, SIZE__ROUTINE_NAME, "%s - %s", rname, "after call to rp_encode_apdu()");
         show_byte_array(rname_plus, (char*)Handler_Transmit_Buffer, 48, BYTE_ARRAY__DISPLAY_FORMAT__16_PER_LINE__GROUPS_OF_FOUR);
 
