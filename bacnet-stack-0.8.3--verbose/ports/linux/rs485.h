@@ -45,6 +45,7 @@ extern "C" {
 
     void RS485_Set_Interface(
         char *ifname);
+
     const char *RS485_Interface(
         void);
 
@@ -58,15 +59,19 @@ extern "C" {
 
     void RS485_Check_UART_Data(
         volatile struct mstp_port_struct_t *mstp_port); /* port specific data */
+
     uint32_t RS485_Get_Port_Baud_Rate(
         volatile struct mstp_port_struct_t *mstp_port);
+
     uint32_t RS485_Get_Baud_Rate(
         void);
+
     bool RS485_Set_Baud_Rate(
         uint32_t baud);
 
     void RS485_Cleanup(
         void);
+
     void RS485_Print_Ports(
         void);
 

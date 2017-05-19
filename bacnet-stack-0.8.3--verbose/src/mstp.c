@@ -213,18 +213,22 @@ void MSTP_Fill_BACnet_Address(
     }
 }
 
+
+
+
+
 uint16_t MSTP_Create_Frame(
-    uint8_t * buffer,   /* where frame is loaded */
-    uint16_t buffer_len,        /* amount of space available */
-    uint8_t frame_type, /* type of frame to send - see defines */
-    uint8_t destination,        /* destination address */
-    uint8_t source,     /* source address */
-    uint8_t * data,     /* any data to be sent - may be null */
-    uint16_t data_len)
-{       /* number of bytes of data (up to 501) */
-    uint8_t crc8 = 0xFF;        /* used to calculate the crc value */
-    uint16_t crc16 = 0xFFFF;    /* used to calculate the crc value */
-    uint16_t index = 0; /* used to load the data portion of the frame */
+    uint8_t * buffer,      /* where frame is loaded */
+    uint16_t buffer_len,   /* amount of space available */
+    uint8_t frame_type,    /* type of frame to send - see defines */
+    uint8_t destination,   /* destination address */
+    uint8_t source,        /* source address */
+    uint8_t * data,        /* any data to be sent - may be null */
+    uint16_t data_len)     /* number of bytes of data (up to 501) */
+{
+    uint8_t crc8 = 0xFF;       /* used to calculate the crc value */
+    uint16_t crc16 = 0xFFFF;   /* used to calculate the crc value */
+    uint16_t index = 0;        /* used to load the data portion of the frame */
 
     /* not enough to do a header */
     if (buffer_len < 8)
@@ -283,7 +287,7 @@ void MSTP_Create_And_Send_Frame(
 
     unsigned int dflag_verbose = DIAGNOSTICS_ON;
 
-    DIAG__SET_ROUTINE_NAME("MSTP_Master_Node_FSM");
+    DIAG__SET_ROUTINE_NAME("MSTP_Create_And_Send_Frame");
 
 
     len =
@@ -291,12 +295,20 @@ void MSTP_Create_And_Send_Frame(
         mstp_port->OutputBufferSize, frame_type, destination, source, data,
         data_len);
 
-show_diag(rname, "calling 'RS485 send frame' routine . . .", dflag_verbose);
+
+// 2017-05-18 - tracing code added by Ted:
+
+//    show_diag(rname, "-- ZZTOP -- calling RS485_Send_Frame() . . . -- ZZTOP --", dflag_verbose);
+    show_diag(rname, "calling RS485_Send_Frame() . . .", dflag_verbose);
+
     RS485_Send_Frame(mstp_port, (uint8_t *) & mstp_port->OutputBuffer[0], len);
-show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
+
+    show_diag(rname, "back from RS485_Send_Frame(),", dflag_verbose);
+
     /* FIXME: be sure to reset SilenceTimer() after each octet is sent! */
 
-}
+
+} // end routine MSTP_Create_And_Send_Frame()
 
 
 
@@ -632,7 +644,8 @@ bool MSTP_Master_Node_FSM(
 
 // diagnostics:
     unsigned int dflag_announce = DIAGNOSTICS_OFF;
-    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose  = DIAGNOSTICS_ON;
+    unsigned int dflag_trace_routine = DIAGNOSTICS_ON;
 
     DIAG__SET_ROUTINE_NAME("MSTP_Master_Node_FSM");
 
@@ -662,6 +675,7 @@ bool MSTP_Master_Node_FSM(
             mstp_port->master_state = MSTP_MASTER_STATE_IDLE;
             transition_now = true;
             break;
+
         case MSTP_MASTER_STATE_IDLE:
             /* In the IDLE state, the node waits for a frame. */
             /* LostToken */
@@ -707,10 +721,17 @@ bool MSTP_Master_Node_FSM(
                             break;
                         case FRAME_TYPE_POLL_FOR_MASTER:
                             /* ReceivedPFM */
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_IDLE, point 1 . . .", dflag_trace_routine);
+
                             MSTP_Create_And_Send_Frame(mstp_port,
                                 FRAME_TYPE_REPLY_TO_POLL_FOR_MASTER,
                                 mstp_port->SourceAddress,
                                 mstp_port->This_Station, NULL, 0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                             break;
                         case FRAME_TYPE_BACNET_DATA_NOT_EXPECTING_REPLY:
                             /* indicate successful reception to the higher layers */
@@ -728,11 +749,18 @@ bool MSTP_Master_Node_FSM(
                             }
                             break;
                         case FRAME_TYPE_TEST_REQUEST:
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_IDLE, point 2 . . .", dflag_trace_routine);
+
                             MSTP_Create_And_Send_Frame(mstp_port,
                                 FRAME_TYPE_TEST_RESPONSE,
                                 mstp_port->SourceAddress,
                                 mstp_port->This_Station,
                                 mstp_port->InputBuffer, mstp_port->DataLength);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                             break;
                         case FRAME_TYPE_TEST_RESPONSE:
                         default:
@@ -747,6 +775,7 @@ bool MSTP_Master_Node_FSM(
                 }
             }
             break;
+
         case MSTP_MASTER_STATE_USE_TOKEN:
             /* In the USE_TOKEN state, the node is allowed to send one or  */
             /* more data frames. These may be BACnet Data frames or */
@@ -761,11 +790,16 @@ bool MSTP_Master_Node_FSM(
             } else {
                 uint8_t frame_type = mstp_port->OutputBuffer[2];
                 uint8_t destination = mstp_port->OutputBuffer[3];
-show_diag(rname, "calling 'RS485 send frame' routine . . .", dflag_verbose);
+
+// 2017-05-18 - tracing code added by Ted:
+    show_diag(rname, "calling RS485_Send_Frame() from case MSTP_MASTER_STATE_USE_TOKEN . . .", dflag_verbose);
+
                 RS485_Send_Frame(mstp_port,
                     (uint8_t *) & mstp_port->OutputBuffer[0],
                     (uint16_t) length);
-show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
+
+    show_diag(rname, "back from RS485_Send_Frame(),", dflag_verbose);
+
                 mstp_port->FrameCount++;
                 switch (frame_type) {
                     case FRAME_TYPE_BACNET_DATA_EXPECTING_REPLY:
@@ -794,6 +828,7 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 }
             }
             break;
+
         case MSTP_MASTER_STATE_WAIT_FOR_REPLY:
             /* In the WAIT_FOR_REPLY state, the node waits for  */
             /* a reply from another node. */
@@ -856,6 +891,7 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 }
             }
             break;
+
         case MSTP_MASTER_STATE_DONE_WITH_TOKEN:
             /* The DONE_WITH_TOKEN state either sends another data frame,  */
             /* passes the token, or initiates a Poll For Master cycle. */
@@ -871,9 +907,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 /*  then the next station to which the token
                    should be sent is unknown - so PollForMaster */
                 mstp_port->Poll_Station = next_this_station;
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_DONE_WITH_TOKEN, point 1 . . .", dflag_trace_routine);
+
                 MSTP_Create_And_Send_Frame(mstp_port,
                     FRAME_TYPE_POLL_FOR_MASTER, mstp_port->Poll_Station,
                     mstp_port->This_Station, NULL, 0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                 mstp_port->RetryCount = 0;
                 mstp_port->master_state = MSTP_MASTER_STATE_POLL_FOR_MASTER;
             } else if (mstp_port->TokenCount < (Npoll - 1)) {
@@ -895,9 +938,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                     /* address at which a new master node may be found in that case. */
                     mstp_port->TokenCount++;
                     /* transmit a Token frame to NS */
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_DONE_WITH_TOKEN, point 2 . . .", dflag_trace_routine);
+
                     MSTP_Create_And_Send_Frame(mstp_port, FRAME_TYPE_TOKEN,
                         mstp_port->Next_Station, mstp_port->This_Station, NULL,
                         0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                     mstp_port->RetryCount = 0;
                     mstp_port->EventCount = 0;
                     mstp_port->master_state = MSTP_MASTER_STATE_PASS_TOKEN;
@@ -906,9 +956,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 if (mstp_port->SoleMaster == true) {
                     /* SoleMasterRestartMaintenancePFM */
                     mstp_port->Poll_Station = next_next_station;
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_DONE_WITH_TOKEN, point 3 . . .", dflag_trace_routine);
+
                     MSTP_Create_And_Send_Frame(mstp_port,
                         FRAME_TYPE_POLL_FOR_MASTER, mstp_port->Poll_Station,
                         mstp_port->This_Station, NULL, 0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                     /* no known successor node */
                     mstp_port->Next_Station = mstp_port->This_Station;
                     mstp_port->RetryCount = 0;
@@ -922,9 +979,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                     /* ResetMaintenancePFM */
                     mstp_port->Poll_Station = mstp_port->This_Station;
                     /* transmit a Token frame to NS */
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_DONE_WITH_TOKEN, point 4 . . .", dflag_trace_routine);
+
                     MSTP_Create_And_Send_Frame(mstp_port, FRAME_TYPE_TOKEN,
                         mstp_port->Next_Station, mstp_port->This_Station, NULL,
                         0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                     mstp_port->RetryCount = 0;
                     /* changed in Errata SSPC-135-2004 */
                     mstp_port->TokenCount = 1;
@@ -934,13 +998,21 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
             } else {
                 /* SendMaintenancePFM */
                 mstp_port->Poll_Station = next_poll_station;
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_DONE_WITH_TOKEN, point 5 . . .", dflag_trace_routine);
+
                 MSTP_Create_And_Send_Frame(mstp_port,
                     FRAME_TYPE_POLL_FOR_MASTER, mstp_port->Poll_Station,
                     mstp_port->This_Station, NULL, 0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                 mstp_port->RetryCount = 0;
                 mstp_port->master_state = MSTP_MASTER_STATE_POLL_FOR_MASTER;
             }
             break;
+
         case MSTP_MASTER_STATE_PASS_TOKEN:
             /* The PASS_TOKEN state listens for a successor to begin using */
             /* the token that this node has just attempted to pass. */
@@ -957,9 +1029,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                     /* RetrySendToken */
                     mstp_port->RetryCount++;
                     /* Transmit a Token frame to NS */
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_PASS_TOKEN, point 1 . . .", dflag_trace_routine);
+
                     MSTP_Create_And_Send_Frame(mstp_port, FRAME_TYPE_TOKEN,
                         mstp_port->Next_Station, mstp_port->This_Station, NULL,
                         0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                     mstp_port->EventCount = 0;
                     /* re-enter the current state to listen for NS  */
                     /* to begin using the token. */
@@ -969,9 +1048,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                     /* note: if NS=TS-1, this node could send PFM to self! */
                     mstp_port->Poll_Station = next_next_station;
                     /* Transmit a Poll For Master frame to PS. */
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_PASS_TOKEN, point 2 . . .", dflag_trace_routine);
+
                     MSTP_Create_And_Send_Frame(mstp_port,
                         FRAME_TYPE_POLL_FOR_MASTER, mstp_port->Poll_Station,
                         mstp_port->This_Station, NULL, 0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                     /* no known successor node */
                     mstp_port->Next_Station = mstp_port->This_Station;
                     mstp_port->RetryCount = 0;
@@ -983,6 +1069,7 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 }
             }
             break;
+
         case MSTP_MASTER_STATE_NO_TOKEN:
             /* The NO_TOKEN state is entered if mstp_port->SilenceTimer() becomes greater  */
             /* than Tno_token, indicating that there has been no network activity */
@@ -1006,9 +1093,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                     /* on the network and is empowered to create a token.  */
                     mstp_port->Poll_Station = next_this_station;
                     /* Transmit a Poll For Master frame to PS. */
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_NO_TOKEN . . .", dflag_trace_routine);
+
                     MSTP_Create_And_Send_Frame(mstp_port,
                         FRAME_TYPE_POLL_FOR_MASTER, mstp_port->Poll_Station,
                         mstp_port->This_Station, NULL, 0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                     /* indicate that the next station is unknown */
                     mstp_port->Next_Station = mstp_port->This_Station;
                     mstp_port->RetryCount = 0;
@@ -1034,6 +1128,7 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 }
             }
             break;
+
         case MSTP_MASTER_STATE_POLL_FOR_MASTER:
             /* In the POLL_FOR_MASTER state, the node listens for a reply to */
             /* a previously sent Poll For Master frame in order to find  */
@@ -1047,9 +1142,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                     mstp_port->Next_Station = mstp_port->SourceAddress;
                     mstp_port->EventCount = 0;
                     /* Transmit a Token frame to NS */
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_POLL_FOR_MASTER, point 1 . . .", dflag_trace_routine);
+
                     MSTP_Create_And_Send_Frame(mstp_port, FRAME_TYPE_TOKEN,
                         mstp_port->Next_Station, mstp_port->This_Station, NULL,
                         0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                     mstp_port->Poll_Station = mstp_port->This_Station;
                     mstp_port->TokenCount = 0;
                     mstp_port->RetryCount = 0;
@@ -1082,9 +1184,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                         /* poll for a master at address PS.  */
                         mstp_port->EventCount = 0;
                         /* transmit a Token frame to NS */
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_POLL_FOR_MASTER, point 2 . . .", dflag_trace_routine);
+
                         MSTP_Create_And_Send_Frame(mstp_port, FRAME_TYPE_TOKEN,
                             mstp_port->Next_Station, mstp_port->This_Station,
                             NULL, 0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                         mstp_port->RetryCount = 0;
                         mstp_port->master_state = MSTP_MASTER_STATE_PASS_TOKEN;
                     } else {
@@ -1092,10 +1201,17 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                             /* SendNextPFM */
                             mstp_port->Poll_Station = next_poll_station;
                             /* Transmit a Poll For Master frame to PS. */
+
+// 2017-05-19 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_POLL_FOR_MASTER, point 3 . . .", dflag_trace_routine);
+
                             MSTP_Create_And_Send_Frame(mstp_port,
                                 FRAME_TYPE_POLL_FOR_MASTER,
                                 mstp_port->Poll_Station,
                                 mstp_port->This_Station, NULL, 0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                             mstp_port->RetryCount = 0;
                             /* Re-enter the current state. */
                         } else {
@@ -1112,6 +1228,7 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 mstp_port->ReceivedInvalidFrame = false;
             }
             break;
+
         case MSTP_MASTER_STATE_ANSWER_DATA_REQUEST:
             /* The ANSWER_DATA_REQUEST state is entered when a  */
             /* BACnet Data Expecting Reply, a Test_Request, or  */
@@ -1128,11 +1245,16 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 /* (the mechanism used to determine this is a local matter), */
                 /* then call MSTP_Create_And_Send_Frame to transmit the reply frame  */
                 /* and enter the IDLE state to wait for the next frame. */
-show_diag(rname, "calling 'RS485 send frame' routine . . .", dflag_verbose);
+
+// 2017-05-18 - tracing code added by Ted:
+    show_diag(rname, "calling RS485_Send_Frame() from case MSTP_MASTER_STATE_ANSWER_DATA_REQUEST . . .", dflag_trace_routine);
+
                 RS485_Send_Frame(mstp_port,
                     (uint8_t *) & mstp_port->OutputBuffer[0],
                     (uint16_t) length);
-show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
+
+    show_diag(rname, "back from RS485_Send_Frame(),", dflag_trace_routine);
+
                 mstp_port->master_state = MSTP_MASTER_STATE_IDLE;
                 /* clear our flag we were holding for comparison */
                 mstp_port->ReceivedValidFrame = false;
@@ -1147,14 +1269,22 @@ show_diag(rname, "back from 'RS485 send frame' routine,", dflag_verbose);
                 /* Any reply shall wait until this node receives the token. */
                 /* Call MSTP_Create_And_Send_Frame to transmit a Reply Postponed frame, */
                 /* and enter the IDLE state. */
+
+// 2017-05-18 - Ted tracing execution flow to routine RS485_Send_Frame:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case MSTP_MASTER_STATE_ANSWER_DATA_REQUEST . . .", dflag_trace_routine);
+
                 MSTP_Create_And_Send_Frame(mstp_port,
                     FRAME_TYPE_REPLY_POSTPONED, mstp_port->SourceAddress,
                     mstp_port->This_Station, NULL, 0);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(......)", dflag_trace_routine);
+
                 mstp_port->master_state = MSTP_MASTER_STATE_IDLE;
                 /* clear our flag we were holding for comparison */
                 mstp_port->ReceivedValidFrame = false;
             }
             break;
+
         default:
             mstp_port->master_state = MSTP_MASTER_STATE_IDLE;
             break;
@@ -1189,7 +1319,8 @@ void MSTP_Slave_Node_FSM(
 
 // diagnostics:
     unsigned int dflag_announce = DIAGNOSTICS_ON;
-//    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+    unsigned int dflag_trace_routine = DIAGNOSTICS_ON;
 
     DIAG__SET_ROUTINE_NAME("MSTP_Slave_Node_FSM");
 
@@ -1197,19 +1328,25 @@ void MSTP_Slave_Node_FSM(
     show_diag(rname, "starting,", dflag_announce);
 
     mstp_port->master_state = MSTP_MASTER_STATE_IDLE;
-    if (mstp_port->ReceivedInvalidFrame == true) {
+    if (mstp_port->ReceivedInvalidFrame == true)
+    {
         /* ReceivedInvalidFrame */
         /* invalid frame was received */
         mstp_port->ReceivedInvalidFrame = false;
-    } else if (mstp_port->ReceivedValidFrame) {
-        switch (mstp_port->FrameType) {
+    }
+    else if (mstp_port->ReceivedValidFrame)
+    {
+        switch (mstp_port->FrameType)
+        {
             case FRAME_TYPE_BACNET_DATA_EXPECTING_REPLY:
-                if (mstp_port->DestinationAddress != MSTP_BROADCAST_ADDRESS) {
+                if (mstp_port->DestinationAddress != MSTP_BROADCAST_ADDRESS)
+                {
                     /* The ANSWER_DATA_REQUEST state is entered when a  */
                     /* BACnet Data Expecting Reply, a Test_Request, or  */
                     /* a proprietary frame that expects a reply is received. */
                     length = (unsigned) MSTP_Get_Reply(mstp_port, 0);
-                    if (length > 0) {
+                    if (length > 0)
+                    {
                         /* Reply */
                         /* If a reply is available from the higher layers  */
                         /* within Treply_delay after the reception of the  */
@@ -1217,9 +1354,18 @@ void MSTP_Slave_Node_FSM(
                         /* (the mechanism used to determine this is a local matter), */
                         /* then call MSTP_Create_And_Send_Frame to transmit the reply frame  */
                         /* and enter the IDLE state to wait for the next frame. */
+
+
+// 2017-05-18 - tracing code added by Ted:
+
+                        show_diag(rname, "calling RS485_Send_Frame() from case FRAME_TYPE_BACNET_DATA_EXPECTING_REPLY . . .", dflag_trace_routine);
+
                         RS485_Send_Frame(mstp_port,
                             (uint8_t *) & mstp_port->OutputBuffer[0],
                             (uint16_t) length);
+
+                        show_diag(rname, "back from RS485_Send_Frame(),", dflag_trace_routine);
+
                         /* clear our flag we were holding for comparison */
                         mstp_port->ReceivedValidFrame = false;
                     } else if (mstp_port->SilenceTimer((void *) mstp_port) >
@@ -1235,12 +1381,21 @@ void MSTP_Slave_Node_FSM(
                     mstp_port->ReceivedValidFrame = false;
                 }
                 break;
+
             case FRAME_TYPE_TEST_REQUEST:
                 mstp_port->ReceivedValidFrame = false;
+
+// 2017-05-19 - tracing code added by Ted:
+    show_diag(rname, "calling MSTP_Create_And_Send_Frame() from case FRAME_TYPE_TEST_REQUEST . . .", dflag_trace_routine);
+
                 MSTP_Create_And_Send_Frame(mstp_port, FRAME_TYPE_TEST_RESPONSE,
                     mstp_port->SourceAddress, mstp_port->This_Station,
                     &mstp_port->InputBuffer[0], mstp_port->DataLength);
+
+    show_diag(rname, "back from MSTP_Create_And_Send_Frame(),", dflag_trace_routine);
+
                 break;
+
             case FRAME_TYPE_TOKEN:
             case FRAME_TYPE_POLL_FOR_MASTER:
             case FRAME_TYPE_TEST_RESPONSE:
@@ -1253,7 +1408,7 @@ void MSTP_Slave_Node_FSM(
 
     show_diag(rname, "done.", dflag_announce);
 
-}
+} // end routine MSTP_Slave_Node_FSM()
 
 
 
@@ -1314,7 +1469,8 @@ void MSTP_Init(volatile struct mstp_port_struct_t *mstp_port)
         mstp_port->ReceivedValidFrameNotForUs = false;
         mstp_port->RetryCount = 0;
 
-    show_diag(rname, "calling routine mstp_port->SilenceTimerReset() with mstp_port itself as parameter . . .", dflag_announce);
+        show_diag(rname, "calling routine mstp_port->SilenceTimerReset() with mstp_port itself as parameter . . .",
+          dflag_verbose);
         mstp_port->SilenceTimerReset((void *) mstp_port);
 
         mstp_port->SoleMaster = false;
