@@ -296,19 +296,30 @@ static void *dlmstp_master_fsm_task(
 {
     uint32_t silence = 0;
     bool run_master = false;
-
     (void) pArg;
-    for (;;) {
+
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("dlmstp_master_fsm_task");
+
+
+    for (;;)
+    {
         if (MSTP_Port.ReceivedValidFrame == false &&
             MSTP_Port.ReceivedInvalidFrame == false) {
             RS485_Check_UART_Data(&MSTP_Port);
             MSTP_Receive_Frame_FSM(&MSTP_Port);
         }
-        if (MSTP_Port.ReceivedValidFrame || MSTP_Port.ReceivedInvalidFrame) {
+
+        if (MSTP_Port.ReceivedValidFrame || MSTP_Port.ReceivedInvalidFrame)
+        {
             run_master = true;
-        } else {
+        }
+        else
+        {
             silence = MSTP_Port.SilenceTimer(NULL);
-            switch (MSTP_Port.master_state) {
+            switch (MSTP_Port.master_state)
+            {
                 case MSTP_MASTER_STATE_IDLE:
                     if (silence >= Tno_token)
                         run_master = true;
@@ -326,12 +337,20 @@ static void *dlmstp_master_fsm_task(
                     break;
             }
         }
-        if (run_master) {
-            if (MSTP_Port.This_Station <= 127) {
-                while (MSTP_Master_Node_FSM(&MSTP_Port)) {
+
+        if (run_master)
+        {
+            if (MSTP_Port.This_Station <= 127)
+            {
+// show_diag(rname, "entering WHILE-loop which tests for MSTP_Master_Node_FSM() to return 'true' . . .", dflag_verbose);
+                while (MSTP_Master_Node_FSM(&MSTP_Port))
+                {
                     /* do nothing while immediate transitioning */
+show_diag(rname, "just called MSTP_Master_Node_FSM() which returned a value of 'true',", dflag_verbose);
                 }
-            } else if (MSTP_Port.This_Station < 255) {
+            }
+            else if (MSTP_Port.This_Station < 255)
+            {
                 MSTP_Slave_Node_FSM(&MSTP_Port);
             }
         }
@@ -339,6 +358,9 @@ static void *dlmstp_master_fsm_task(
 
     return NULL;
 }
+
+
+
 
 void dlmstp_fill_bacnet_address(
     BACNET_ADDRESS * src,

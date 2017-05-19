@@ -314,6 +314,13 @@ void *dlmstp_master_fsm_task(
     bool run_master = false;
     SHARED_MSTP_DATA *poSharedData;
     struct mstp_port_struct_t *mstp_port = (struct mstp_port_struct_t *) pArg;
+
+// diagnostics:
+    unsigned int dflag_verbose = DIAGNOSTICS_ON;
+
+    DIAG__SET_ROUTINE_NAME("dlmstp_master_fsm_task");
+
+
     if (!mstp_port) {
         return NULL;
     }
@@ -324,17 +331,23 @@ void *dlmstp_master_fsm_task(
         return NULL;
     }
 
-    for (;;) {
-        if (mstp_port->ReceivedValidFrame == false &&
-            mstp_port->ReceivedInvalidFrame == false) {
+    for (;;)
+    {
+        if (mstp_port->ReceivedValidFrame == false && mstp_port->ReceivedInvalidFrame == false)
+        {
             RS485_Check_UART_Data(mstp_port);
             MSTP_Receive_Frame_FSM(mstp_port);
         }
-        if (mstp_port->ReceivedValidFrame || mstp_port->ReceivedInvalidFrame) {
+
+        if (mstp_port->ReceivedValidFrame || mstp_port->ReceivedInvalidFrame)
+        {
             run_master = true;
-        } else {
+        }
+        else
+        {
             silence = mstp_port->SilenceTimer(NULL);
-            switch (mstp_port->master_state) {
+            switch (mstp_port->master_state)
+            {
                 case MSTP_MASTER_STATE_IDLE:
                     if (silence >= Tno_token)
                         run_master = true;
@@ -352,19 +365,30 @@ void *dlmstp_master_fsm_task(
                     break;
             }
         }
-        if (run_master) {
-            if (mstp_port->This_Station <= DEFAULT_MAX_MASTER) {
-                while (MSTP_Master_Node_FSM(mstp_port)) {
+
+        if (run_master)
+        {
+            if (mstp_port->This_Station <= DEFAULT_MAX_MASTER)
+            {
+                while (MSTP_Master_Node_FSM(mstp_port))
+                {
+show_diag(rname, "just called MSTP_Master_Node_FSM() which returned a value of 'true',", dflag_verbose);
                     /* do nothing while immediate transitioning */
                 }
-            } else if (mstp_port->This_Station < 255) {
+            }
+            else if (mstp_port->This_Station < 255)
+            {
                 MSTP_Slave_Node_FSM(mstp_port);
             }
         }
     }
 
     return NULL;
-}
+
+} // end routine dlmstp_master_fsm_task()
+
+
+
 
 void dlmstp_fill_bacnet_address(
     BACNET_ADDRESS * src,
