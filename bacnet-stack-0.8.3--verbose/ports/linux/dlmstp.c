@@ -883,13 +883,18 @@ bool dlmstp_init(char *ifname)
     fprintf(stderr, "MS/TP Max_Info_Frames: %u\n", MSTP_Port.Nmax_info_frames);
 #endif
 
+
     /* start the threads */
     /*    rv = pthread_create(&hThread, NULL, dlmstp_receive_fsm_task, NULL); */
     /*    if (rv != 0) {
        fprintf(stderr, "Failed to start recive FSM task\n");
        } */
+
+    show_diag(rname, "* * * Starting posix thread using routine dlmstp_master_fsm_task(), which eventually calls RS485_Send_Frame() . . .", dflag_verbose);
     rv = pthread_create(&hThread, NULL, dlmstp_master_fsm_task, NULL);
-    if (rv != 0) {
+
+    if (rv != 0)
+    {
         fprintf(stderr, "Failed to start Master Node FSM task\n");
     }
 

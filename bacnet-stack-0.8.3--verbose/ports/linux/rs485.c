@@ -466,11 +466,19 @@ void RS485_Send_Frame(
     snprintf(lbuf, SIZE__DIAG_MESSAGE, "called to send %d bytes,", nbytes);
     show_diag(rname, lbuf, dflag_verbose);
 
+    show_diag(rname, "before any tests or bounds checking here showing bytes to send:", dflag_verbose);
+    show_byte_array(rname, buffer, nbytes, BYTE_ARRAY__DISPLAY_FORMAT__16_PER_LINE__GROUPS_OF_FOUR);
+
+
+    show_diag(rname, "checking whether passed mstp_port pointer is not null,", dflag_verbose);
+
     if (mstp_port)
     {
         poSharedData = (SHARED_MSTP_DATA *) mstp_port->UserData;
     }
 
+
+    show_diag(rname, "checking whether local SHARED_MSTP_DATA poSharedData pointer is null,", dflag_verbose);
     if (!poSharedData)
     {
         baud = RS485_Get_Baud_Rate();
@@ -485,6 +493,7 @@ void RS485_Send_Frame(
            regular file, 0 will be returned without causing any other effect.  For
            a special file, the results are not portable.
          */
+        show_diag(rname, "calling C system routine named write() . . .", dflag_verbose);
         written = write(RS485_Handle, buffer, nbytes);
         greska = errno;
         if (written <= 0)
